@@ -1,6 +1,7 @@
 {
   "name": "kairu-studio",
-  "version": "0.1.0",
+  "version": "1.120.0",
+  "kairuVersion": "0.1.0",
   "author": {
     "name": "Kairu Studio",
     "url": "https://kairu.studio"

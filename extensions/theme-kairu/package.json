@@ -1,0 +1,28 @@
+{
+  "name": "theme-kairu",
+  "displayName": "Kairu Themes",
+  "description": "Kairu Studio default themes — minimal-monochrome dark theme.",
+  "categories": [
+    "Themes"
+  ],
+  "version": "0.1.0",
+  "publisher": "kairu",
+  "license": "MIT",
+  "engines": {
+    "vscode": "*"
+  },
+  "contributes": {
+    "themes": [
+      {
+        "id": "Kairu Dark",
+        "label": "Kairu Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/kairu-dark.json"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kairu-studio/kairu.git"
+  }
+}

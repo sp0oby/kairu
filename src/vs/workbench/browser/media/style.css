@@ -28,9 +28,9 @@
 .monaco-workbench.linux:lang(ja) { font-family: system-ui, "Ubuntu", "Droid Sans", "Source Han Sans J", "Source Han Sans JP", "Source Han Sans", sans-serif; }
 .monaco-workbench.linux:lang(ko) { font-family: system-ui, "Ubuntu", "Droid Sans", "Source Han Sans K", "Source Han Sans JR", "Source Han Sans", "UnDotum", "FBaekmuk Gulim", sans-serif; }
 
-.monaco-workbench.mac { --monaco-monospace-font: "SF Mono", Monaco, Menlo, Courier, monospace; }
-.monaco-workbench.windows { --monaco-monospace-font: Consolas, "Courier New", monospace; }
-.monaco-workbench.linux { --monaco-monospace-font: "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace; }
+.monaco-workbench.mac { --monaco-monospace-font: "Geist Mono", "JetBrains Mono", "SF Mono", Monaco, Menlo, Courier, monospace; }
+.monaco-workbench.windows { --monaco-monospace-font: "Geist Mono", "JetBrains Mono", Consolas, "Courier New", monospace; }
+.monaco-workbench.linux { --monaco-monospace-font: "Geist Mono", "JetBrains Mono", "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace; }
 
 /* Global Styles */
 
@@ -353,4 +353,222 @@ body {
 .monaco-workbench .monaco-action-bar:not(.vertical) .action-item .action-label:hover:not(.disabled) {
 	outline: 1px dashed var(--vscode-toolbar-hoverOutline);
 	outline-offset: -1px;
+}
+
+/* ============================================================
+ * Kairu Studio — Glass polish layer
+ * Minimal-monochrome with glossy/glass feel.
+ * Applied to floating/overlay elements where backdrop-filter
+ * will actually show through; subtle gloss highlights on panels.
+ * ============================================================ */
+
+.monaco-workbench {
+	--kairu-glass-bg: rgba(19, 19, 22, 0.72);
+	--kairu-glass-bg-elevated: rgba(19, 19, 22, 0.85);
+	--kairu-glass-border: rgba(255, 255, 255, 0.08);
+	--kairu-glass-highlight: rgba(255, 255, 255, 0.04);
+	--kairu-radius-sm: 6px;
+	--kairu-radius-md: 10px;
+	--kairu-radius-lg: 14px;
+	--kairu-transition: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Smooth transitions across interactive elements */
+.monaco-workbench .monaco-list-row,
+.monaco-workbench .action-item,
+.monaco-workbench .monaco-button,
+.monaco-workbench .menu-item,
+.monaco-workbench .tab,
+.monaco-workbench .quick-input-list .quick-input-list-entry,
+.monaco-workbench .monaco-dropdown,
+.monaco-workbench .activitybar .action-item .action-label {
+	transition: background-color var(--kairu-transition),
+	            color var(--kairu-transition),
+	            border-color var(--kairu-transition),
+	            opacity var(--kairu-transition);
+}
+
+/* === Glass on floating overlays === */
+
+/* Quick input (Command Palette, file picker) */
+.monaco-workbench .quick-input-widget {
+	background: var(--kairu-glass-bg-elevated) !important;
+	border: 1px solid var(--kairu-glass-border) !important;
+	border-radius: var(--kairu-radius-md) !important;
+	backdrop-filter: blur(24px) saturate(160%);
+	-webkit-backdrop-filter: blur(24px) saturate(160%);
+	box-shadow:
+		0 1px 0 0 var(--kairu-glass-highlight) inset,
+		0 16px 48px rgba(0, 0, 0, 0.55),
+		0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Suggest widget (autocomplete) */
+.monaco-workbench .editor-widget.suggest-widget {
+	background: var(--kairu-glass-bg-elevated) !important;
+	border: 1px solid var(--kairu-glass-border) !important;
+	border-radius: var(--kairu-radius-md) !important;
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	box-shadow:
+		0 1px 0 0 var(--kairu-glass-highlight) inset,
+		0 12px 32px rgba(0, 0, 0, 0.5);
+	overflow: hidden;
+}
+
+/* Hover widget */
+.monaco-workbench .monaco-hover {
+	background: var(--kairu-glass-bg-elevated) !important;
+	border: 1px solid var(--kairu-glass-border) !important;
+	border-radius: var(--kairu-radius-md) !important;
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	box-shadow: 0 1px 0 0 var(--kairu-glass-highlight) inset, 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Context menus */
+.monaco-workbench .monaco-menu-container,
+.monaco-workbench .context-view {
+	border-radius: var(--kairu-radius-md);
+}
+
+.monaco-workbench .monaco-menu .monaco-action-bar.vertical {
+	background: var(--kairu-glass-bg-elevated) !important;
+	border: 1px solid var(--kairu-glass-border) !important;
+	border-radius: var(--kairu-radius-md) !important;
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	box-shadow:
+		0 1px 0 0 var(--kairu-glass-highlight) inset,
+		0 12px 32px rgba(0, 0, 0, 0.5);
+	padding: 4px;
+}
+
+/* Notifications */
+.monaco-workbench .notifications-toasts .notification-toast {
+	border-radius: var(--kairu-radius-md) !important;
+	border: 1px solid var(--kairu-glass-border) !important;
+	background: var(--kairu-glass-bg-elevated) !important;
+	backdrop-filter: blur(24px) saturate(160%);
+	-webkit-backdrop-filter: blur(24px) saturate(160%);
+	box-shadow:
+		0 1px 0 0 var(--kairu-glass-highlight) inset,
+		0 16px 48px rgba(0, 0, 0, 0.5);
+	overflow: hidden;
+}
+
+/* Notification center */
+.monaco-workbench .notifications-center {
+	border-radius: var(--kairu-radius-md);
+	border: 1px solid var(--kairu-glass-border);
+	background: var(--kairu-glass-bg-elevated) !important;
+	backdrop-filter: blur(24px) saturate(160%);
+	-webkit-backdrop-filter: blur(24px) saturate(160%);
+	box-shadow: 0 1px 0 0 var(--kairu-glass-highlight) inset, 0 16px 48px rgba(0, 0, 0, 0.5);
+	overflow: hidden;
+}
+
+/* Find widget */
+.monaco-workbench .editor-widget.find-widget {
+	border-radius: var(--kairu-radius-md) !important;
+	border: 1px solid var(--kairu-glass-border) !important;
+	background: var(--kairu-glass-bg-elevated) !important;
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	box-shadow: 0 1px 0 0 var(--kairu-glass-highlight) inset, 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* === Subtle gloss on persistent surfaces === */
+
+/* Sidebar — subtle top-edge highlight (glass sheen) */
+.monaco-workbench .part.sidebar {
+	background-image: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0.025) 0%,
+		rgba(255, 255, 255, 0) 64px
+	);
+}
+
+/* Activity bar — subtle top-edge highlight */
+.monaco-workbench .part.activitybar {
+	background-image: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0.03) 0%,
+		rgba(255, 255, 255, 0) 80px
+	);
+}
+
+/* Title bar — subtle bottom-fade gloss */
+.monaco-workbench .part.titlebar {
+	background-image: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0.02) 0%,
+		rgba(0, 0, 0, 0) 100%
+	);
+}
+
+/* Panel (terminal/output area) — subtle top-edge highlight */
+.monaco-workbench .part.panel {
+	background-image: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0.02) 0%,
+		rgba(255, 255, 255, 0) 32px
+	);
+}
+
+/* Status bar — subtle top-edge sheen */
+.monaco-workbench .part.statusbar {
+	background-image: linear-gradient(
+		to bottom,
+		rgba(255, 255, 255, 0.025) 0%,
+		rgba(255, 255, 255, 0) 100%
+	);
+}
+
+/* === Refined interactive states === */
+
+/* Buttons */
+.monaco-workbench .monaco-button {
+	border-radius: var(--kairu-radius-sm) !important;
+}
+
+.monaco-workbench .monaco-button:not(.disabled) {
+	box-shadow: 0 1px 0 0 rgba(255, 255, 255, 0.04) inset;
+}
+
+/* Inputs */
+.monaco-workbench .monaco-inputbox {
+	border-radius: var(--kairu-radius-sm);
+}
+
+/* Dropdowns */
+.monaco-workbench .monaco-select-box,
+.monaco-workbench select.monaco-select-box {
+	border-radius: var(--kairu-radius-sm) !important;
+}
+
+/* Activity bar item hover — softer */
+.monaco-workbench .activitybar .action-item .action-label {
+	border-radius: var(--kairu-radius-sm);
+}
+
+/* List rows in side panels — subtle inset highlight on hover */
+.monaco-workbench .monaco-list:focus .monaco-list-row.focused {
+	box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+/* Tabs — refined active indicator */
+.monaco-workbench .tabs-container > .tab.active::before {
+	background: linear-gradient(
+		to right,
+		rgba(255, 255, 255, 0) 0%,
+		var(--vscode-tab-activeBorderTop, #FAFAFA) 20%,
+		var(--vscode-tab-activeBorderTop, #FAFAFA) 80%,
+		rgba(255, 255, 255, 0) 100%
+	);
+}
+
+/* Scrollbars — slimmer, more refined */
+.monaco-workbench .monaco-scrollable-element > .scrollbar > .slider {
+	border-radius: 4px;
 }

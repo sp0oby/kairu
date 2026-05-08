@@ -189,6 +189,17 @@ export function defaultBrowserWindowOptions(accessor: ServicesAccessor, windowSt
 		if (windowSettings?.clickThroughInactive === false) {
 			options.acceptFirstMouse = false;
 		}
+
+		// Kairu: native macOS vibrancy for glass aesthetic.
+		// 'under-window' lets the desktop wallpaper subtly bleed through
+		// transparent surfaces. The window backgroundColor is set transparent
+		// so the vibrancy effect is visible behind partially-transparent
+		// titlebar / activitybar / sidebar / statusbar.
+		// The editor itself stays opaque via theme color (#0A0A0B).
+		(options as electron.BrowserWindowConstructorOptions & { vibrancy?: string }).vibrancy = 'under-window';
+		options.backgroundColor = '#00000000';
+		options.transparent = true;
+		options.visualEffectState = 'followWindow';
 	}
 
 	if (overrides?.disableFullscreen) {

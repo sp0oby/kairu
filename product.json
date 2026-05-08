@@ -34,6 +34,13 @@
 	"nodejsRepository": "https://nodejs.org",
 	"urlProtocol": "kairu",
 	"enableTelemetry": false,
+	"extensionsGallery": {
+		"serviceUrl": "https://open-vsx.org/vscode/gallery",
+		"itemUrl": "https://open-vsx.org/vscode/item",
+		"resourceUrlTemplate": "https://openvsxorg.blob.core.windows.net/resources/{publisher}/{name}/{version}/{path}",
+		"controlUrl": "",
+		"recommendationsUrl": ""
+	},
 	"webviewContentExternalBaseUrlTemplate": "https://{{uuid}}.vscode-cdn.net/insider/ef65ac1ba57f57f2a3961bfe94aa20481caca4c6/out/vs/workbench/contrib/webview/browser/pre/",
 	"builtInExtensions": [
 		{
@@ -123,6 +130,12 @@
 		}
 	],
 	"onboardingThemes": [
+		{
+			"id": "kairu-dark",
+			"label": "Kairu Dark",
+			"themeId": "Kairu Dark",
+			"type": "dark"
+		},
 		{
 			"id": "dark-2026",
 			"label": "Dark 2026",

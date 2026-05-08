@@ -1,0 +1,152 @@
+{
+	"name": "kairu-ai",
+	"displayName": "Kairu AI",
+	"description": "Local-first AI chat for Web3 development. Supports Ollama (local), Anthropic Claude, and OpenAI.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"main": "./out/extension.js",
+	"activationEvents": [
+		"onView:kairu.chat",
+		"onCommand:kairu.ai.openChat"
+	],
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "kairu-ai-container",
+					"title": "Kairu AI",
+					"icon": "./media/kairu-icon.svg"
+				}
+			]
+		},
+		"views": {
+			"kairu-ai-container": [
+				{
+					"type": "webview",
+					"id": "kairu.chat",
+					"name": "Kairu AI",
+					"icon": "./media/kairu-icon.svg",
+					"contextualTitle": "Kairu AI",
+					"visibility": "visible"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "kairu.ai.setup",
+				"title": "Kairu: Setup AI (Provider, Model, API Key)",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.openChat",
+				"title": "Kairu: Open AI Chat",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.setApiKey",
+				"title": "Kairu: Set AI Provider API Key",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.deleteApiKey",
+				"title": "Kairu: Delete AI Provider API Key",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.selectProvider",
+				"title": "Kairu: Select AI Provider",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.selectModel",
+				"title": "Kairu: Select AI Model",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.clearChat",
+				"title": "Kairu: Clear Chat",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.explainSelection",
+				"title": "Kairu: Explain Selected Code",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.findVulnerabilities",
+				"title": "Kairu: Find Vulnerabilities in Selection",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.generateFoundryTests",
+				"title": "Kairu: Generate Foundry Tests",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.optimizeGas",
+				"title": "Kairu: Optimize Gas Usage",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.explainError",
+				"title": "Kairu: Explain This Error",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.generateNatSpec",
+				"title": "Kairu: Generate NatSpec Documentation",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.summarizeFunction",
+				"title": "Kairu: Summarize Function",
+				"category": "Kairu"
+			}
+		],
+		"configuration": {
+			"title": "Kairu AI",
+			"properties": {
+				"kairu.ai.provider": {
+					"type": "string",
+					"enum": ["anthropic", "openai", "gemini", "ollama", "openai-compatible"],
+					"default": "anthropic",
+					"description": "AI provider to use for chat. Anthropic Claude is recommended; cloud providers store API keys encrypted in the OS keychain."
+				},
+				"kairu.ai.model": {
+					"type": "string",
+					"default": "",
+					"description": "Model name (e.g. claude-sonnet-4-6 for Anthropic, gpt-4o for OpenAI, gemini-2.5-pro for Gemini). Leave empty to be prompted by the setup wizard."
+				},
+				"kairu.ai.ollama.endpoint": {
+					"type": "string",
+					"default": "http://localhost:11434",
+					"description": "Ollama API endpoint."
+				},
+				"kairu.ai.openaiCompatible.endpoint": {
+					"type": "string",
+					"default": "",
+					"description": "Custom OpenAI-compatible API endpoint (e.g. self-hosted vLLM). Leave empty if not using."
+				},
+				"kairu.ai.systemPrompt": {
+					"type": "string",
+					"default": "You are Kairu, an AI engineer embedded in a Web3 IDE. You assist with Solidity, smart contract security, Foundry, EVM internals, and protocol architecture. You are precise, terse, and never speculate beyond what the code shows. You flag risks before suggesting fixes.",
+					"description": "System prompt prepended to every conversation."
+				},
+				"kairu.ai.maxTokens": {
+					"type": "number",
+					"default": 4096,
+					"description": "Maximum tokens to generate per response."
+				},
+				"kairu.ai.includeActiveFile": {
+					"type": "boolean",
+					"default": true,
+					"description": "Automatically inject the active editor's file as context."
+				}
+			}
+		}
+	}
+}

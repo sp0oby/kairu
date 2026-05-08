@@ -1,0 +1,162 @@
+{
+    "name": "vscode-vyper",
+    "displayName": "Vyper",
+    "description": "Ethereum Vyper language support for Visual Studio Code",
+    "license": "MIT",
+    "version": "0.1.0",
+    "keywords": [
+        "vyper",
+        "ethereum",
+        "blockchain",
+        "compiler",
+        "security"
+    ],
+    "publisher": "tintinweb",
+    "icon": "images/icon.png",
+    "galleryBanner": {
+        "color": "#EDE5D5",
+        "theme": "light"
+    },
+    "engines": {
+        "vscode": "^1.87.0"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets"
+    ],
+    "bugs": {
+        "url": "https://github.com/tintinweb/vscode-vyper/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/tintinweb/vscode-vyper"
+    },
+    "main": "./src/extension.js",
+    "browser": "./dist/web/extension.js",
+    "contributes": {
+        "languages": [
+            {
+                "id": "vyper",
+                "aliases": [
+                    "Vyper",
+                    "vyper",
+                    "vy"
+                ],
+                "extensions": [
+                    ".vy",
+                    ".vyi"
+                ],
+                "configuration": "./language-configuration.json",
+                "icon": {
+                    "light": "images/icon_small_with_border.png",
+                    "dark": "images/icon_small_with_border.png"
+                }
+            }
+        ],
+        "grammars": [
+            {
+                "language": "vyper",
+                "scopeName": "source.vyper",
+                "path": "./syntaxes/vyper.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+                "language": "vyper",
+                "path": "./snippets/expr_builtins.json"
+            },
+            {
+                "language": "vyper",
+                "path": "./snippets/stmt_builtins.json"
+            },
+            {
+                "language": "vyper",
+                "path": "./snippets/expressions.json"
+            },
+            {
+                "language": "vyper",
+                "path": "./snippets/statements.json"
+            },
+            {
+                "language": "vyper",
+                "path": "./snippets/module.json"
+            },
+            {
+                "language": "vyper",
+                "path": "./snippets/other.json"
+            },
+            {
+                "language": "vyper",
+                "path": "./snippets/types.json"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Vyper (Ethereum)",
+            "properties": {
+                "vyper.compile.onSave": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically compile when saving and annotate code with compile results."
+                },
+                "vyper.compile.verbose": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Enable/Suppress Compiler Success/Error Information Popup Messages. Compiler errors will still be decorated in the editor."
+                },
+                "vyper.mode.active": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable/Disable all active components of this extension (emergency)."
+                },
+                "vyper.decoration.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to enable/disable vyper active syntax highlighting for security."
+                },
+                "vyper.hover.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to enable/disable vyper tooltips/hover information."
+                },
+                "vyper.command": {
+                    "type": "string",
+                    "default": "vyper",
+                    "description": "Defines how to invoke the vyper compiler command. This can by any shell command and the vyper arguments will be passed to this command as <vyper.command> <args>. Default is to assume vyper is installed in PATH and executable as `vyper`"
+                }
+            }
+        },
+        "commands": [
+            {
+                "command": "vyper.compileContract",
+                "title": "Vyper: Compile"
+            }
+        ],
+        "x-keybindings": [
+            {
+                "key": "cmd+alt+shift+i",
+                "command": "editor.action.inspectTMScopes"
+            }
+        ]
+    },
+    "scripts": {
+        "fetchGrammar": "rm -f syntaxes/vyper.tmLanguage.json  && python3 ./scripts/fetch_vyper_language_spec.py > syntaxes/vyper.tmLanguage.json",
+        "test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
+        "pretest": "npm run compile-web",
+        "vscode:prepublish": "npm run package-web",
+        "compile-web": "webpack -c config/web.webpack.config.js",
+        "watch-web": "webpack -c config/web.webpack.config.js --watch",
+        "package-web": "webpack -c config/web.webpack.config.js --mode production --devtool hidden-source-map",
+        "run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+    },
+    "dependencies": {
+        "async": "^3.2.4",
+        "chai": "^4.2.0",
+        "shell-escape": "^0.2.0"
+    },
+    "devDependencies": {
+        "@vscode/test-web": "^0.0.52",
+        "webpack": "^5.66.0",
+        "webpack-cli": "^4.9.1"
+    }
+}

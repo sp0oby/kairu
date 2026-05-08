@@ -33,7 +33,15 @@ import { ChatAgentLocation, ChatModeKind } from '../common/constants.js';
 import { ChatViewId, ChatViewContainerId } from './chat.js';
 import { ChatViewPane } from './widgetHosts/viewPane/chatViewPane.js';
 
-// --- Chat Container &  View Registration
+// --- Chat Container & View Registration
+//
+// Kairu: VSCode's built-in chat view container is hidden by default in
+// Kairu Studio because the bundled `kairu-ai` extension provides the chat
+// experience. The registration code is preserved (and types must compile)
+// so future Phase 9 work can replace the participant with Kairu natively
+// and re-enable this panel.
+
+const KAIRU_DISABLE_BUILTIN_CHAT_VIEW = true;
 
 const chatViewIcon = registerIcon('chat-view-icon', Codicon.chatSparkle, localize('chatViewIcon', 'View icon of the chat view.'));
 
@@ -45,7 +53,7 @@ const chatViewContainer: ViewContainer = Registry.as<IViewContainersRegistry>(Vi
 	storageId: ChatViewContainerId,
 	hideIfEmpty: true,
 	order: 1,
-}, ViewContainerLocation.AuxiliaryBar, { isDefault: true, doNotRegisterOpenCommand: true });
+}, ViewContainerLocation.AuxiliaryBar, { isDefault: false, doNotRegisterOpenCommand: true });
 
 const chatViewDescriptor: IViewDescriptor = {
 	id: ChatViewId,
@@ -68,19 +76,24 @@ const chatViewDescriptor: IViewDescriptor = {
 		order: 1
 	},
 	ctorDescriptor: new SyncDescriptor(ChatViewPane),
-	when: ContextKeyExpr.and(
-		ChatContextKeys.accountPolicyGateActive.negate(),
-		ContextKeyExpr.or(
-			ContextKeyExpr.and(
-				ChatContextKeys.Setup.hidden.negate(),
-				ChatContextKeys.Setup.disabledInWorkspace.negate(),
-			),
-			ChatContextKeys.panelParticipantRegistered,
-			ChatContextKeys.extensionInvalid
+	when: KAIRU_DISABLE_BUILTIN_CHAT_VIEW
+		? ContextKeyExpr.false()
+		: ContextKeyExpr.and(
+			ChatContextKeys.accountPolicyGateActive.negate(),
+			ContextKeyExpr.or(
+				ContextKeyExpr.and(
+					ChatContextKeys.Setup.hidden.negate(),
+					ChatContextKeys.Setup.disabledInWorkspace.negate(),
+				),
+				ChatContextKeys.panelParticipantRegistered,
+				ChatContextKeys.extensionInvalid
+			)
 		)
-	)
 };
-Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).registerViews([chatViewDescriptor], chatViewContainer);
+
+if (!KAIRU_DISABLE_BUILTIN_CHAT_VIEW) {
+	Registry.as<IViewsRegistry>(ViewExtensions.ViewsRegistry).registerViews([chatViewDescriptor], chatViewContainer);
+}
 
 const chatParticipantExtensionPoint = extensionsRegistry.ExtensionsRegistry.registerExtensionPoint<IRawChatParticipantContribution[]>({
 	extensionPoint: 'chatParticipants',

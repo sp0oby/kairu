@@ -1,0 +1,118 @@
+{
+    "name": "solidity-metrics",
+    "displayName": "Solidity Metrics",
+    "description": "Solidity Metrics",
+    "version": "0.0.25",
+    "keywords": [
+        "code",
+        "metrics",
+        "solidity",
+        "ethereum",
+        "summary",
+        "exploration",
+        "complexity",
+        "risk",
+        "vscode"
+    ],
+    "publisher": "tintinweb",
+    "icon": "images/icon.png",
+    "engines": {
+        "vscode": "^1.40.2"
+    },
+    "categories": [
+        "Other"
+    ],
+    "bugs": {
+        "url": "https://github.com/ConsenSys/vscode-solidity-metrics/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ConsenSys/vscode-solidity-metrics"
+    },
+    "main": "./src/extension.js",
+    "activationEvents": [
+        "onCommand:solidity-metrics.workspace.report",
+        "onCommand:solidity-metrics.contextMenu.report",
+        "onCommand:solidity-metrics.activeFile.report",
+        "onCommand:solidity-metrics.activeFile.exportHtml",
+        "onCommand:solidity-metrics.useScopeFile"
+    ],
+    "contributes": {
+        "commands": [
+            {
+                "command": "solidity-metrics.workspace.report",
+                "title": "Report metrics for all open workspaces",
+                "category": "Solidity Metrics"
+            },
+            {
+                "command": "solidity-metrics.activeFile.report",
+                "title": "Report metrics for current file",
+                "category": "Solidity Metrics"
+            },
+            {
+                "command": "solidity-metrics.activeFile.exportHtml",
+                "title": "Export This Metrics Report",
+                "category": "Solidity Metrics"
+            },
+            {
+                "command": "solidity-metrics.contextMenu.report",
+                "title": "Solidity: Metrics",
+                "category": "Solidity Metrics"
+            },
+            {
+                "command": "solidity-metrics.useScopeFile",
+                "title": "Analyze Solidity Using Scope File",
+                "category": "Solidity Metrics"
+            }
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Solidity Metrics",
+            "properties": {
+                "solidity-metrics.file.exclusions.glob": {
+                    "type": "string",
+                    "default": "{**/node_modules,**/mock*,**/test*,**/migrations,**/Migrations.sol}",
+                    "description": "VSCode.glob list of paths to ignore in the analysis. '{<glob>,<glob>,<glob>}'"
+                },
+                "solidity-metrics.file.limit": {
+                    "type": "integer",
+                    "default": 2000,
+                    "description": "Maximum number of files to process in the workspace"
+                },
+                "solidity-metrics.scopefile.name": {
+                    "type": "string",
+                    "default": "scope.txt",
+                    "description": "Default scope file name"
+                }
+            }
+        },
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "solidity-metrics.contextMenu.report",
+                    "group": "solidity"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "command": "solidity-metrics.activeFile.exportHtml",
+                    "group": "solidity",
+                    "when": "metricsReportActiveContext"
+                }
+            ]
+        }
+    },
+    "scripts": {
+        "build:web": "webpack --entry ./websrc/main.js -o ./content/ --mode='production'",
+        "format": "prettier --write \"src/**/*.{js,ts,json,css}\""
+    },
+    "dependencies": {
+        "solidity-code-metrics": "^0.0.28"
+    },
+    "devDependencies": {
+        "prettier": "^3.2.5",
+        "webpack": "^5.91.0",
+        "webpack-cli": "^5.0.1"
+    },
+    "license": "MIT"
+}
