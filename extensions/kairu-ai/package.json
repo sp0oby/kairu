@@ -156,10 +156,15 @@
 					"default": true,
 					"description": "Allow the AI to call tools (read/edit files, run forge build/test, run Slither, fetch from Etherscan, etc.) during chat. Currently supported on Anthropic Claude. Disable to make the AI advisory-only."
 				},
-				"kairu.ai.inlineCompletions.enabled": {
+				"kairu.ai.staticCompletions.enabled": {
 					"type": "boolean",
 					"default": true,
-					"description": "AI-powered inline completions (ghost text). Suggests what you might be typing as you go — like Copilot or Tabnine. Toggle via 'Kairu: Toggle Inline Completions'."
+					"description": "Static (non-AI) ghost-text completions for common Solidity/Vyper patterns: pragma, SPDX, contract/function/mapping declarations, etc. Free, instant, deterministic. On by default."
+				},
+				"kairu.ai.inlineCompletions.enabled": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "AI-powered ghost-text completions (like Copilot, but BYO API key). **Costs API tokens per fire** — typically a few cents per active hour. Off by default. Static pattern completions (free) are on by default and cover common boilerplate. Toggle via 'Kairu: Toggle Inline AI Completions'."
 				},
 				"kairu.ai.inlineCompletions.model": {
 					"type": "string",

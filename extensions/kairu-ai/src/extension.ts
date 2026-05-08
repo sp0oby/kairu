@@ -14,6 +14,7 @@ import { SecretsManager } from './secrets';
 import { runSetupWizard } from './setupWizard';
 import { SemanticIndex } from './semantic/index';
 import { KairuInlineCompletionProvider } from './inline/completionProvider';
+import { KairuStaticCompletionProvider } from './inline/staticCompletionProvider';
 import { generateCommitMessage } from './commitMessage';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -24,20 +25,30 @@ export function activate(context: vscode.ExtensionContext): void {
 	// Start semantic indexing in the background (non-blocking)
 	semanticIndex.startWatching().catch(() => { /* silently ignore startup errors */ });
 
-	// Register inline completion provider for the supported languages.
-	// The provider is gated by the kairu.ai.inlineCompletions.enabled setting (default: false).
-	const inlineProvider = new KairuInlineCompletionProvider(secrets);
+	const completionLanguages = [
+		{ language: 'solidity' },
+		{ language: 'vyper' },
+		{ language: 'typescript' },
+		{ language: 'javascript' },
+		{ language: 'json' },
+		{ language: 'rust' },
+	];
+
+	// Static (non-AI) inline completions — patterns like "pragma" → "pragma solidity ^0.8.24;"
+	// On by default, free, instant. Acts as the first-class "Copilot lite" feel.
 	context.subscriptions.push(
 		vscode.languages.registerInlineCompletionItemProvider(
-			[
-				{ language: 'solidity' },
-				{ language: 'vyper' },
-				{ language: 'typescript' },
-				{ language: 'javascript' },
-				{ language: 'json' },
-				{ language: 'rust' },
-			],
-			inlineProvider
+			completionLanguages,
+			new KairuStaticCompletionProvider()
+		)
+	);
+
+	// AI ghost-text inline completions (opt-in, costs API tokens per fire).
+	// Off by default — user explicitly enables via `Kairu: Toggle Inline AI Completions`.
+	context.subscriptions.push(
+		vscode.languages.registerInlineCompletionItemProvider(
+			completionLanguages,
+			new KairuInlineCompletionProvider(secrets)
 		)
 	);
 
