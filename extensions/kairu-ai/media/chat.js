@@ -113,7 +113,7 @@
 			<div class="kairu-empty-mark">K</div>
 			<div>
 				<h1 class="kairu-empty-title">How can I help with your code?</h1>
-				<p class="kairu-empty-sub">Local-first AI for Web3 development. Ask about Solidity, Foundry, security, exploits, or anything in your workspace.</p>
+				<p class="kairu-empty-sub">Ask about Solidity, Foundry, security, exploits, or anything in your workspace.</p>
 			</div>
 			<div class="kairu-prompt-grid">${chips}</div>
 			<div class="kairu-status-bar">
