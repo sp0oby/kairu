@@ -10,8 +10,14 @@
 	},
 	"main": "./out/extension.js",
 	"activationEvents": [
+		"onStartupFinished",
 		"onView:kairu.chat",
-		"onCommand:kairu.ai.openChat"
+		"onCommand:kairu.ai.openChat",
+		"onLanguage:solidity",
+		"onLanguage:vyper",
+		"onLanguage:typescript",
+		"onLanguage:javascript",
+		"onLanguage:rust"
 	],
 	"contributes": {
 		"viewsContainers": {
