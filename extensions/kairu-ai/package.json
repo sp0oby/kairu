@@ -105,6 +105,16 @@
 				"command": "kairu.ai.summarizeFunction",
 				"title": "Kairu: Summarize Function",
 				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.generateCommitMessage",
+				"title": "Kairu: Generate Commit Message from Staged Changes",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.toggleInlineCompletions",
+				"title": "Kairu: Toggle Inline AI Completions",
+				"category": "Kairu"
 			}
 		],
 		"configuration": {
@@ -145,6 +155,21 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Allow the AI to call tools (read/edit files, run forge build/test, run Slither, fetch from Etherscan, etc.) during chat. Currently supported on Anthropic Claude. Disable to make the AI advisory-only."
+				},
+				"kairu.ai.inlineCompletions.enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Enable AI-powered inline completions (ghost text). Off by default — chatty completions can interfere with manual typing. Toggle via 'Kairu: Toggle Inline Completions'."
+				},
+				"kairu.ai.inlineCompletions.model": {
+					"type": "string",
+					"default": "",
+					"description": "Optional override model for inline completions. Defaults to kairu.ai.model. Use a fast model (e.g. claude-haiku-4-5) for low-latency completions."
+				},
+				"kairu.ai.inlineCompletions.maxTokens": {
+					"type": "number",
+					"default": 200,
+					"description": "Max tokens per inline completion. Lower = faster + cheaper, but completions may be cut off."
 				},
 				"kairu.ai.includeActiveFile": {
 					"type": "boolean",

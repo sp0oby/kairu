@@ -9,6 +9,7 @@ import { checkSlitherInstalled, runSlither } from './slither';
 import { openAuditPanel, buildDiagnostics } from './auditPanel';
 import { activateSecretDetection } from './secretDetector';
 import { runEnvImport } from './envImport';
+import { KairuSecurityCodeActionProvider, askAIToFix, auditAllFindingsWithAI } from './codeActions';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('kairu-security');
@@ -16,6 +17,15 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Secret detection (Phase 11A)
 	activateSecretDetection(context);
+
+	// "Fix with Kairu AI" code action provider (lightbulb on diagnostics)
+	context.subscriptions.push(
+		vscode.languages.registerCodeActionsProvider(
+			{ language: 'solidity' },
+			new KairuSecurityCodeActionProvider(),
+			{ providedCodeActionKinds: KairuSecurityCodeActionProvider.providedCodeActionKinds },
+		)
+	);
 
 	// Auto-check on save (pattern analysis only, no Slither on save)
 	context.subscriptions.push(
@@ -129,6 +139,10 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand('kairu.security.checkPatternsAPI', (src: string) => {
 			return runPatternChecks(src);
 		}),
+
+		// Code action callbacks (lightbulb → "Fix with AI")
+		vscode.commands.registerCommand('kairu.security.askAIToFix', askAIToFix),
+		vscode.commands.registerCommand('kairu.security.auditAllFindingsWithAI', auditAllFindingsWithAI),
 
 		vscode.commands.registerCommand('kairu.security.runSlither', async () => {
 			const editor = vscode.window.activeTextEditor;

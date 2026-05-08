@@ -13,6 +13,8 @@ import { ProviderId } from './providers/types';
 import { SecretsManager } from './secrets';
 import { runSetupWizard } from './setupWizard';
 import { SemanticIndex } from './semantic/index';
+import { KairuInlineCompletionProvider } from './inline/completionProvider';
+import { generateCommitMessage } from './commitMessage';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const secrets = new SecretsManager(context.secrets);
@@ -21,6 +23,23 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Start semantic indexing in the background (non-blocking)
 	semanticIndex.startWatching().catch(() => { /* silently ignore startup errors */ });
+
+	// Register inline completion provider for the supported languages.
+	// The provider is gated by the kairu.ai.inlineCompletions.enabled setting (default: false).
+	const inlineProvider = new KairuInlineCompletionProvider(secrets);
+	context.subscriptions.push(
+		vscode.languages.registerInlineCompletionItemProvider(
+			[
+				{ language: 'solidity' },
+				{ language: 'vyper' },
+				{ language: 'typescript' },
+				{ language: 'javascript' },
+				{ language: 'json' },
+				{ language: 'rust' },
+			],
+			inlineProvider
+		)
+	);
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(KairuChatViewProvider.viewType, chatProvider, {
@@ -41,6 +60,17 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		vscode.commands.registerCommand('kairu.ai.setup', async () => {
 			await runSetupWizard(secrets);
+		}),
+
+		vscode.commands.registerCommand('kairu.ai.generateCommitMessage', async () => {
+			await generateCommitMessage(secrets);
+		}),
+
+		vscode.commands.registerCommand('kairu.ai.toggleInlineCompletions', async () => {
+			const config = vscode.workspace.getConfiguration('kairu.ai');
+			const current = config.get<boolean>('inlineCompletions.enabled', false);
+			await config.update('inlineCompletions.enabled', !current, vscode.ConfigurationTarget.Global);
+			vscode.window.showInformationMessage(`Kairu inline completions: ${!current ? 'enabled' : 'disabled'}`);
 		}),
 
 		vscode.commands.registerCommand('kairu.ai.clearChat', () => {
