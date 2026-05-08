@@ -1,0 +1,23 @@
+{
+	"name": "kairu-snippets",
+	"displayName": "Kairu Web3 Snippets",
+	"description": "Kairu-curated Solidity snippets: proxies, Foundry tests, OpenZeppelin patterns, security primitives.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"contributes": {
+		"snippets": [
+			{
+				"language": "solidity",
+				"path": "./snippets/solidity-kairu.json"
+			}
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kairu-studio/kairu.git"
+	}
+}

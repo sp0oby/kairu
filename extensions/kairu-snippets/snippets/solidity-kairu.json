@@ -1,0 +1,737 @@
+{
+	"Foundry test scaffold": {
+		"prefix": "ktest",
+		"description": "Kairu — Foundry test contract with setUp, happy-path test, and fuzz test",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {Test, console} from \"forge-std/Test.sol\";",
+			"import {${1:Target}} from \"../src/${1:Target}.sol\";",
+			"",
+			"contract ${1:Target}Test is Test {",
+			"\t${1:Target} public ${2:target};",
+			"\taddress public alice = makeAddr(\"alice\");",
+			"\taddress public bob = makeAddr(\"bob\");",
+			"",
+			"\tfunction setUp() public {",
+			"\t\t${2:target} = new ${1:Target}(${3});",
+			"\t}",
+			"",
+			"\tfunction test_${4:behavior}() public {",
+			"\t\t${0}",
+			"\t}",
+			"",
+			"\tfunction testFuzz_${5:behavior}(uint256 amount) public {",
+			"\t\tvm.assume(amount > 0 && amount < type(uint128).max);",
+			"\t\t// fuzz body",
+			"\t}",
+			"",
+			"\tfunction test_RevertWhen_${6:condition}() public {",
+			"\t\tvm.expectRevert();",
+			"\t\t// trigger revert",
+			"\t}",
+			"}",
+			""
+		]
+	},
+
+	"Foundry deploy script": {
+		"prefix": "kscript",
+		"description": "Kairu — Foundry deploy script",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {Script, console} from \"forge-std/Script.sol\";",
+			"import {${1:Contract}} from \"../src/${1:Contract}.sol\";",
+			"",
+			"contract Deploy${1:Contract} is Script {",
+			"\tfunction run() public returns (${1:Contract}) {",
+			"\t\tvm.startBroadcast();",
+			"\t\t${1:Contract} ${2:deployed} = new ${1:Contract}(${3});",
+			"\t\tvm.stopBroadcast();",
+			"\t\tconsole.log(\"${1:Contract} deployed to:\", address(${2:deployed}));",
+			"\t\treturn ${2:deployed};",
+			"\t}",
+			"}",
+			""
+		]
+	},
+
+	"Foundry invariant test": {
+		"prefix": "kinvariant",
+		"description": "Kairu — Foundry invariant (stateful fuzz) test scaffold",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {Test} from \"forge-std/Test.sol\";",
+			"import {StdInvariant} from \"forge-std/StdInvariant.sol\";",
+			"",
+			"contract ${1:Target}Invariant is StdInvariant, Test {",
+			"\t${2:Target} public target;",
+			"",
+			"\tfunction setUp() public {",
+			"\t\ttarget = new ${2:Target}();",
+			"\t\ttargetContract(address(target));",
+			"\t}",
+			"",
+			"\tfunction invariant_${3:property}() public view {",
+			"\t\t${0:assertGe(target.totalSupply(), 0);}",
+			"\t}",
+			"}",
+			""
+		]
+	},
+
+	"UUPS upgradeable contract": {
+		"prefix": "kuups",
+		"description": "Kairu — UUPS upgradeable contract template (OpenZeppelin)",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {Initializable} from \"@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol\";",
+			"import {UUPSUpgradeable} from \"@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol\";",
+			"import {OwnableUpgradeable} from \"@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol\";",
+			"",
+			"contract ${1:MyContract} is Initializable, OwnableUpgradeable, UUPSUpgradeable {",
+			"\t/// @custom:oz-upgrades-unsafe-allow constructor",
+			"\tconstructor() {",
+			"\t\t_disableInitializers();",
+			"\t}",
+			"",
+			"\tfunction initialize(address initialOwner) public initializer {",
+			"\t\t__Ownable_init(initialOwner);",
+			"\t\t__UUPSUpgradeable_init();",
+			"\t\t${0}",
+			"\t}",
+			"",
+			"\tfunction _authorizeUpgrade(address newImplementation) internal override onlyOwner {}",
+			"}",
+			""
+		]
+	},
+
+	"Transparent proxy implementation": {
+		"prefix": "kproxy",
+		"description": "Kairu — Transparent proxy admin + implementation pattern (OpenZeppelin)",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {TransparentUpgradeableProxy} from \"@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol\";",
+			"import {ProxyAdmin} from \"@openzeppelin/contracts/proxy/transparent/ProxyAdmin.sol\";",
+			"",
+			"// Deployment:",
+			"// 1. Deploy ${1:Implementation}",
+			"// 2. Encode initializer: abi.encodeCall(${1:Implementation}.initialize, (args))",
+			"// 3. Deploy TransparentUpgradeableProxy(impl, admin, initData)",
+			"// 4. ProxyAdmin owns the proxy and is the only one who can upgrade",
+			"$0"
+		]
+	},
+
+	"OZ AccessControl boilerplate": {
+		"prefix": "kaccess",
+		"description": "Kairu — OpenZeppelin AccessControl with custom roles",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {AccessControl} from \"@openzeppelin/contracts/access/AccessControl.sol\";",
+			"",
+			"contract ${1:MyContract} is AccessControl {",
+			"\tbytes32 public constant ${2:OPERATOR_ROLE} = keccak256(\"${2:OPERATOR_ROLE}\");",
+			"\tbytes32 public constant ${3:PAUSER_ROLE} = keccak256(\"${3:PAUSER_ROLE}\");",
+			"",
+			"\tconstructor(address admin) {",
+			"\t\t_grantRole(DEFAULT_ADMIN_ROLE, admin);",
+			"\t\t_grantRole(${2:OPERATOR_ROLE}, admin);",
+			"\t}",
+			"",
+			"\tfunction ${4:privilegedAction}() external onlyRole(${2:OPERATOR_ROLE}) {",
+			"\t\t${0}",
+			"\t}",
+			"}",
+			""
+		]
+	},
+
+	"ReentrancyGuard usage": {
+		"prefix": "knonreentrant",
+		"description": "Kairu — OpenZeppelin ReentrancyGuard import and modifier",
+		"body": [
+			"import {ReentrancyGuard} from \"@openzeppelin/contracts/utils/ReentrancyGuard.sol\";",
+			"",
+			"contract ${1:MyContract} is ReentrancyGuard {",
+			"\tfunction ${2:withdraw}(uint256 amount) external nonReentrant {",
+			"\t\t${0}",
+			"\t}",
+			"}",
+			""
+		]
+	},
+
+	"CEI pattern (Checks-Effects-Interactions)": {
+		"prefix": "kcei",
+		"description": "Kairu — Checks-Effects-Interactions pattern (reentrancy-safe withdraw)",
+		"body": [
+			"function ${1:withdraw}(uint256 amount) external {",
+			"\t// Checks",
+			"\tif (balances[msg.sender] < amount) revert InsufficientBalance();",
+			"",
+			"\t// Effects",
+			"\tbalances[msg.sender] -= amount;",
+			"",
+			"\t// Interactions (last)",
+			"\t(bool success, ) = msg.sender.call{value: amount}(\"\");",
+			"\tif (!success) revert TransferFailed();",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"Custom error + revert": {
+		"prefix": "kerror",
+		"description": "Kairu — custom error definition with usage (gas-efficient revert)",
+		"body": [
+			"error ${1:Unauthorized}(${2:address caller});",
+			"",
+			"function ${3:protectedAction}() external {",
+			"\tif (msg.sender != owner) revert ${1:Unauthorized}(${2/(.+)\\s+(.+)/$2/});",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"SafeERC20 transfer": {
+		"prefix": "ksafe20",
+		"description": "Kairu — SafeERC20 import + safeTransfer / safeTransferFrom usage",
+		"body": [
+			"import {IERC20} from \"@openzeppelin/contracts/token/ERC20/IERC20.sol\";",
+			"import {SafeERC20} from \"@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol\";",
+			"",
+			"using SafeERC20 for IERC20;",
+			"",
+			"// Inside a function:",
+			"// IERC20(token).safeTransfer(recipient, amount);",
+			"// IERC20(token).safeTransferFrom(from, address(this), amount);",
+			"$0"
+		]
+	},
+
+	"ERC4626 vault skeleton": {
+		"prefix": "kvault",
+		"description": "Kairu — ERC4626 tokenized vault skeleton",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"import {ERC20} from \"@openzeppelin/contracts/token/ERC20/ERC20.sol\";",
+			"import {ERC4626, IERC20} from \"@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol\";",
+			"",
+			"contract ${1:MyVault} is ERC4626 {",
+			"\tconstructor(IERC20 asset_)",
+			"\t\tERC20(\"${2:My Vault Share}\", \"${3:vSHARE}\")",
+			"\t\tERC4626(asset_)",
+			"\t{}",
+			"",
+			"\t/// @notice Override to compute total managed assets including yield strategy.",
+			"\tfunction totalAssets() public view override returns (uint256) {",
+			"\t\treturn IERC20(asset()).balanceOf(address(this));",
+			"\t}",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"Storage slot via keccak256": {
+		"prefix": "kslot",
+		"description": "Kairu — Custom storage slot via keccak256 (EIP-1967 / namespaced storage pattern)",
+		"body": [
+			"bytes32 private constant ${1:_SLOT} = keccak256(\"${2:kairu.slot.}${3:identifier}\");",
+			"",
+			"function _getSlot() private view returns (uint256 value) {",
+			"\tassembly {",
+			"\t\tvalue := sload(${1:_SLOT})",
+			"\t}",
+			"}",
+			"",
+			"function _setSlot(uint256 value) private {",
+			"\tassembly {",
+			"\t\tsstore(${1:_SLOT}, value)",
+			"\t}",
+			"}",
+			"$0"
+		]
+	},
+
+	"Pull payment pattern": {
+		"prefix": "kpull",
+		"description": "Kairu — Pull payment pattern (avoids reentrancy in send)",
+		"body": [
+			"mapping(address => uint256) public pendingWithdrawals;",
+			"",
+			"function ${1:queueWithdrawal}(address recipient, uint256 amount) internal {",
+			"\tpendingWithdrawals[recipient] += amount;",
+			"}",
+			"",
+			"function withdraw() external {",
+			"\tuint256 amount = pendingWithdrawals[msg.sender];",
+			"\tif (amount == 0) revert NothingToWithdraw();",
+			"\tpendingWithdrawals[msg.sender] = 0;",
+			"\t(bool success, ) = msg.sender.call{value: amount}(\"\");",
+			"\tif (!success) revert TransferFailed();",
+			"}",
+			"$0"
+		]
+	},
+
+	"OZ Pausable usage": {
+		"prefix": "kpausable",
+		"description": "Kairu — OpenZeppelin Pausable with admin-controlled pause",
+		"body": [
+			"import {Pausable} from \"@openzeppelin/contracts/utils/Pausable.sol\";",
+			"import {Ownable} from \"@openzeppelin/contracts/access/Ownable.sol\";",
+			"",
+			"contract ${1:MyContract} is Pausable, Ownable {",
+			"\tconstructor() Ownable(msg.sender) {}",
+			"",
+			"\tfunction pause() external onlyOwner { _pause(); }",
+			"\tfunction unpause() external onlyOwner { _unpause(); }",
+			"",
+			"\tfunction ${2:protectedAction}() external whenNotPaused {",
+			"\t\t${0}",
+			"\t}",
+			"}",
+			""
+		]
+	},
+
+	"Multicall pattern": {
+		"prefix": "kmulticall",
+		"description": "Kairu — OpenZeppelin Multicall import and inheritance",
+		"body": [
+			"import {Multicall} from \"@openzeppelin/contracts/utils/Multicall.sol\";",
+			"",
+			"contract ${1:MyContract} is Multicall {",
+			"\t// Now supports `multicall(bytes[] data) external returns (bytes[] memory)`",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"Slippage check": {
+		"prefix": "kslip",
+		"description": "Kairu — Minimum-out slippage protection pattern",
+		"body": [
+			"function ${1:swap}(uint256 amountIn, uint256 minAmountOut) external {",
+			"\tuint256 amountOut = _executeSwap(amountIn);",
+			"\tif (amountOut < minAmountOut) revert SlippageExceeded(amountOut, minAmountOut);",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"Timelock require deadline": {
+		"prefix": "kdeadline",
+		"description": "Kairu — Deadline check for time-bound operations (defi swaps, etc)",
+		"body": [
+			"modifier ensureDeadline(uint256 deadline) {",
+			"\tif (block.timestamp > deadline) revert DeadlinePassed();",
+			"\t_;",
+			"}",
+			"",
+			"function ${1:swap}(uint256 amountIn, uint256 deadline) external ensureDeadline(deadline) {",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"Permit2 transferFrom": {
+		"prefix": "kpermit2",
+		"description": "Kairu — Uniswap Permit2 transferFrom (signature-based ERC20 approval)",
+		"body": [
+			"import {ISignatureTransfer} from \"@uniswap/permit2/src/interfaces/ISignatureTransfer.sol\";",
+			"",
+			"address constant PERMIT2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;",
+			"",
+			"function ${1:depositWithPermit}(",
+			"\tISignatureTransfer.PermitTransferFrom memory permit,",
+			"\tbytes calldata signature",
+			") external {",
+			"\tISignatureTransfer(PERMIT2).permitTransferFrom(",
+			"\t\tpermit,",
+			"\t\tISignatureTransfer.SignatureTransferDetails({",
+			"\t\t\tto: address(this),",
+			"\t\t\trequestedAmount: permit.permitted.amount",
+			"\t\t}),",
+			"\t\tmsg.sender,",
+			"\t\tsignature",
+			"\t);",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"ERC20 minimal": {
+		"prefix": "kerc20",
+		"description": "Kairu — Minimal ERC20 implementation (no OpenZeppelin dependency)",
+		"body": [
+			"// SPDX-License-Identifier: MIT",
+			"pragma solidity ^0.8.24;",
+			"",
+			"contract ${1:MyToken} {",
+			"\tstring public name = \"${2:My Token}\";",
+			"\tstring public symbol = \"${3:MTK}\";",
+			"\tuint8 public constant decimals = 18;",
+			"\tuint256 public totalSupply;",
+			"",
+			"\tmapping(address => uint256) public balanceOf;",
+			"\tmapping(address => mapping(address => uint256)) public allowance;",
+			"",
+			"\tevent Transfer(address indexed from, address indexed to, uint256 amount);",
+			"\tevent Approval(address indexed owner, address indexed spender, uint256 amount);",
+			"",
+			"\tfunction transfer(address to, uint256 amount) external returns (bool) {",
+			"\t\tbalanceOf[msg.sender] -= amount;",
+			"\t\tunchecked { balanceOf[to] += amount; }",
+			"\t\temit Transfer(msg.sender, to, amount);",
+			"\t\treturn true;",
+			"\t}",
+			"",
+			"\tfunction approve(address spender, uint256 amount) external returns (bool) {",
+			"\t\tallowance[msg.sender][spender] = amount;",
+			"\t\temit Approval(msg.sender, spender, amount);",
+			"\t\treturn true;",
+			"\t}",
+			"",
+			"\tfunction transferFrom(address from, address to, uint256 amount) external returns (bool) {",
+			"\t\tuint256 allowed = allowance[from][msg.sender];",
+			"\t\tif (allowed != type(uint256).max) allowance[from][msg.sender] = allowed - amount;",
+			"\t\tbalanceOf[from] -= amount;",
+			"\t\tunchecked { balanceOf[to] += amount; }",
+			"\t\temit Transfer(from, to, amount);",
+			"\t\treturn true;",
+			"\t}",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"EIP-712 domain separator": {
+		"prefix": "keip712",
+		"description": "Kairu — EIP-712 domain separator + typed data hash helper",
+		"body": [
+			"bytes32 private constant _DOMAIN_TYPEHASH =",
+			"\tkeccak256(\"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)\");",
+			"",
+			"function _domainSeparator() internal view returns (bytes32) {",
+			"\treturn keccak256(abi.encode(",
+			"\t\t_DOMAIN_TYPEHASH,",
+			"\t\tkeccak256(bytes(\"${1:ContractName}\")),",
+			"\t\tkeccak256(bytes(\"${2:1}\")),",
+			"\t\tblock.chainid,",
+			"\t\taddress(this)",
+			"\t));",
+			"}",
+			"",
+			"function _hashTypedData(bytes32 structHash) internal view returns (bytes32) {",
+			"\treturn keccak256(abi.encodePacked(\"\\x19\\x01\", _domainSeparator(), structHash));",
+			"}",
+			"$0"
+		]
+	},
+
+	"ERC-2612 Permit": {
+		"prefix": "kpermit",
+		"description": "Kairu — ERC-2612 permit() function for gasless ERC20 approvals",
+		"body": [
+			"bytes32 private constant _PERMIT_TYPEHASH =",
+			"\tkeccak256(\"Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)\");",
+			"",
+			"mapping(address => uint256) public nonces;",
+			"",
+			"function permit(",
+			"\taddress owner,",
+			"\taddress spender,",
+			"\tuint256 value,",
+			"\tuint256 deadline,",
+			"\tuint8 v,",
+			"\tbytes32 r,",
+			"\tbytes32 s",
+			") external {",
+			"\tif (block.timestamp > deadline) revert PermitExpired();",
+			"\tbytes32 structHash = keccak256(abi.encode(",
+			"\t\t_PERMIT_TYPEHASH,",
+			"\t\towner,",
+			"\t\tspender,",
+			"\t\tvalue,",
+			"\t\tnonces[owner]++,",
+			"\t\tdeadline",
+			"\t));",
+			"\tbytes32 digest = _hashTypedData(structHash);",
+			"\taddress signer = ecrecover(digest, v, r, s);",
+			"\tif (signer != owner || signer == address(0)) revert InvalidSignature();",
+			"\tallowance[owner][spender] = value;",
+			"\temit Approval(owner, spender, value);",
+			"}",
+			"$0"
+		]
+	},
+
+	"Merkle proof verification": {
+		"prefix": "kmerkle",
+		"description": "Kairu — verify a Merkle proof (whitelist / airdrop pattern)",
+		"body": [
+			"bytes32 public ${1:merkleRoot};",
+			"mapping(address => bool) public ${2:claimed};",
+			"",
+			"error AlreadyClaimed();",
+			"error InvalidProof();",
+			"",
+			"function ${3:claim}(bytes32[] calldata proof, ${4:uint256 amount}) external {",
+			"\tif (${2:claimed}[msg.sender]) revert AlreadyClaimed();",
+			"\tbytes32 leaf = keccak256(abi.encodePacked(msg.sender${5:, amount}));",
+			"\tbytes32 node = leaf;",
+			"\tfor (uint256 i = 0; i < proof.length; i++) {",
+			"\t\tnode = node < proof[i]",
+			"\t\t\t? keccak256(abi.encodePacked(node, proof[i]))",
+			"\t\t\t: keccak256(abi.encodePacked(proof[i], node));",
+			"\t}",
+			"\tif (node != ${1:merkleRoot}) revert InvalidProof();",
+			"\t${2:claimed}[msg.sender] = true;",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"ECDSA recover (signed message)": {
+		"prefix": "kecdsa",
+		"description": "Kairu — recover signer from a signed message hash (with EIP-191 prefix)",
+		"body": [
+			"function recoverSigner(bytes32 hash, bytes calldata signature) public pure returns (address) {",
+			"\trequire(signature.length == 65, \"bad sig length\");",
+			"\tbytes32 r;",
+			"\tbytes32 s;",
+			"\tuint8 v;",
+			"\tassembly {",
+			"\t\tr := calldataload(signature.offset)",
+			"\t\ts := calldataload(add(signature.offset, 0x20))",
+			"\t\tv := byte(0, calldataload(add(signature.offset, 0x40)))",
+			"\t}",
+			"\tbytes32 prefixed = keccak256(abi.encodePacked(\"\\x19Ethereum Signed Message:\\n32\", hash));",
+			"\taddress signer = ecrecover(prefixed, v, r, s);",
+			"\trequire(signer != address(0), \"invalid sig\");",
+			"\treturn signer;",
+			"}",
+			"$0"
+		]
+	},
+
+	"Try/catch external call": {
+		"prefix": "ktrycatch",
+		"description": "Kairu — try/catch around an external call, decoding revert reason",
+		"body": [
+			"try ${1:contract}.${2:method}(${3:args}) returns (${4:uint256 result}) {",
+			"\t${5:// success}",
+			"} catch Error(string memory reason) {",
+			"\t// External revert(\"...\")",
+			"\temit ${6:CallFailed}(reason);",
+			"} catch Panic(uint256 errorCode) {",
+			"\t// Solidity panic (assert, divide-by-zero, etc.)",
+			"\temit ${6:CallFailed}(string(abi.encodePacked(\"panic 0x\", errorCode)));",
+			"} catch (bytes memory rawData) {",
+			"\t// Custom error or other low-level revert",
+			"\temit ${6:CallFailed}(string(rawData));",
+			"}",
+			"$0"
+		]
+	},
+
+	"Bitmap storage (cheap booleans)": {
+		"prefix": "kbitmap",
+		"description": "Kairu — packed bitmap storage for cheap bulk-boolean state (e.g. claimed flags)",
+		"body": [
+			"mapping(uint256 => uint256) private _bitmap;",
+			"",
+			"function _isSet(uint256 index) internal view returns (bool) {",
+			"\tuint256 wordIndex = index / 256;",
+			"\tuint256 bitIndex = index % 256;",
+			"\treturn (_bitmap[wordIndex] >> bitIndex) & 1 == 1;",
+			"}",
+			"",
+			"function _set(uint256 index) internal {",
+			"\tuint256 wordIndex = index / 256;",
+			"\tuint256 bitIndex = index % 256;",
+			"\t_bitmap[wordIndex] |= (1 << bitIndex);",
+			"}",
+			"",
+			"function _unset(uint256 index) internal {",
+			"\tuint256 wordIndex = index / 256;",
+			"\tuint256 bitIndex = index % 256;",
+			"\t_bitmap[wordIndex] &= ~(1 << bitIndex);",
+			"}",
+			"$0"
+		]
+	},
+
+	"Ownable2Step": {
+		"prefix": "kown2",
+		"description": "Kairu — two-step ownership transfer (safer than direct transferOwnership)",
+		"body": [
+			"address public owner;",
+			"address public pendingOwner;",
+			"",
+			"event OwnershipTransferStarted(address indexed previousOwner, address indexed pendingOwner);",
+			"event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);",
+			"",
+			"error NotOwner();",
+			"error NotPendingOwner();",
+			"",
+			"modifier onlyOwner() {",
+			"\tif (msg.sender != owner) revert NotOwner();",
+			"\t_;",
+			"}",
+			"",
+			"function transferOwnership(address newOwner) external onlyOwner {",
+			"\tpendingOwner = newOwner;",
+			"\temit OwnershipTransferStarted(owner, newOwner);",
+			"}",
+			"",
+			"function acceptOwnership() external {",
+			"\tif (msg.sender != pendingOwner) revert NotPendingOwner();",
+			"\taddress oldOwner = owner;",
+			"\towner = pendingOwner;",
+			"\tdelete pendingOwner;",
+			"\temit OwnershipTransferred(oldOwner, owner);",
+			"}",
+			"$0"
+		]
+	},
+
+	"Linear vesting schedule": {
+		"prefix": "kvest",
+		"description": "Kairu — linear vesting with cliff (release tokens over time)",
+		"body": [
+			"uint256 public immutable start;",
+			"uint256 public immutable cliff;",
+			"uint256 public immutable duration;",
+			"uint256 public released;",
+			"",
+			"function vestedAmount() public view returns (uint256) {",
+			"\tif (block.timestamp < cliff) return 0;",
+			"\tif (block.timestamp >= start + duration) return ${1:totalAllocation};",
+			"\treturn (${1:totalAllocation} * (block.timestamp - start)) / duration;",
+			"}",
+			"",
+			"function releasable() public view returns (uint256) {",
+			"\treturn vestedAmount() - released;",
+			"}",
+			"",
+			"function release() external {",
+			"\tuint256 amount = releasable();",
+			"\trequire(amount > 0, \"nothing to release\");",
+			"\treleased += amount;",
+			"\t${2:// transfer tokens}",
+			"\t${0}",
+			"}",
+			""
+		]
+	},
+
+	"Diamond storage struct": {
+		"prefix": "kdiamond",
+		"description": "Kairu — Diamond storage pattern (EIP-2535) — namespaced storage for upgradeable facets",
+		"body": [
+			"library ${1:MyFacet}Storage {",
+			"\tbytes32 internal constant SLOT = keccak256(\"kairu.diamond.${2:facet.name}\");",
+			"",
+			"\tstruct Layout {",
+			"\t\t${3:uint256 value;}",
+			"\t\t${4:mapping(address => uint256) balances;}",
+			"\t}",
+			"",
+			"\tfunction layout() internal pure returns (Layout storage l) {",
+			"\t\tbytes32 slot = SLOT;",
+			"\t\tassembly { l.slot := slot }",
+			"\t}",
+			"}",
+			"$0"
+		]
+	},
+
+	"AccessControl admin role pattern": {
+		"prefix": "krole",
+		"description": "Kairu — Quick AccessControl: define a custom role + modifier + grant function",
+		"body": [
+			"bytes32 public constant ${1:OPERATOR_ROLE} = keccak256(\"${1:OPERATOR_ROLE}\");",
+			"",
+			"mapping(bytes32 => mapping(address => bool)) private _roles;",
+			"",
+			"event RoleGranted(bytes32 indexed role, address indexed account);",
+			"event RoleRevoked(bytes32 indexed role, address indexed account);",
+			"",
+			"error MissingRole(bytes32 role, address account);",
+			"",
+			"modifier onlyRole(bytes32 role) {",
+			"\tif (!_roles[role][msg.sender]) revert MissingRole(role, msg.sender);",
+			"\t_;",
+			"}",
+			"",
+			"function grantRole(bytes32 role, address account) external onlyRole(0x00) {",
+			"\t_roles[role][account] = true;",
+			"\temit RoleGranted(role, account);",
+			"}",
+			"",
+			"function revokeRole(bytes32 role, address account) external onlyRole(0x00) {",
+			"\t_roles[role][account] = false;",
+			"\temit RoleRevoked(role, account);",
+			"}",
+			"$0"
+		]
+	},
+
+	"Reentrant call detector (pure, gas-cheap)": {
+		"prefix": "kreentrant",
+		"description": "Kairu — Manual reentrancy guard using transient storage (EIP-1153) for gas-cheap protection",
+		"body": [
+			"// Requires Solidity ^0.8.24 + a chain that supports transient storage (EIP-1153)",
+			"bytes32 private constant _GUARD_SLOT = keccak256(\"kairu.reentrancy.guard\");",
+			"",
+			"modifier nonReentrantTransient() {",
+			"\tassembly {",
+			"\t\tif tload(_GUARD_SLOT) { revert(0, 0) }",
+			"\t\ttstore(_GUARD_SLOT, 1)",
+			"\t}",
+			"\t_;",
+			"\tassembly { tstore(_GUARD_SLOT, 0) }",
+			"}",
+			"$0"
+		]
+	},
+
+	"Bound + clamp helper": {
+		"prefix": "kbound",
+		"description": "Kairu — Foundry vm.bound() helper for fuzz tests (constrain values to a sane range)",
+		"body": [
+			"function ${1:fuzz}_test(${2:uint256 amount}, ${3:address user}) public {",
+			"\t${2:amount} = bound(${2:amount}, ${4:1}, ${5:type(uint128).max});",
+			"\tvm.assume(${3:user} != address(0) && ${3:user} != address(this));",
+			"\t${0}",
+			"}",
+			""
+		]
+	}
+}

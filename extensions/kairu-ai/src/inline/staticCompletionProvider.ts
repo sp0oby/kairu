@@ -36,43 +36,79 @@ interface StaticPattern {
 }
 
 // True when the file does not yet contain any contract/library/interface
-// declaration — the boilerplate will give them one. As long as nothing's
-// declared yet, typing "pragma" suggests the full scaffold.
+// declaration — the boilerplate will give them one.
 function isTopOfBareFile(doc: vscode.TextDocument, _position: vscode.Position): boolean {
 	const fullText = stripCommentsAndStrings(doc.getText());
 	return !/\b(contract|library|interface|abstract\s+contract)\s+\w/.test(fullText);
 }
 
 // Quick comment/string stripper so a comment "// contract MyContract" doesn't
-// fool the boilerplate gate. Best-effort, doesn't need to be perfect.
+// fool the boilerplate gate. Best-effort.
 function stripCommentsAndStrings(src: string): string {
 	return src
-		.replace(/\/\*[\s\S]*?\*\//g, '')   // /* ... */ block comments
-		.replace(/\/\/[^\n]*/g, '')          // // line comments
-		.replace(/"[^"\n]*"/g, '""')         // double-quoted strings
-		.replace(/'[^'\n]*'/g, "''");        // single-quoted strings
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.replace(/\/\/[^\n]*/g, '')
+		.replace(/"[^"\n]*"/g, '""')
+		.replace(/'[^'\n]*'/g, "''");
+}
+
+const FULL_BOILERPLATE = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+contract MyContract {
+    constructor() {
+
+    }
+}`;
+
+/**
+ * Special pre-pattern handler: when typing `pragma` (or `// SPDX`) at the top
+ * of a file that has no SPDX line yet, replace the typed text + everything
+ * before it on the file with the full boilerplate (SPDX + pragma + contract).
+ *
+ * This lets us prepend SPDX above the cursor — something a normal
+ * InlineCompletionItem with `Range(position, position)` cannot do.
+ *
+ * Returns the InlineCompletionItem if applicable, or undefined to fall through
+ * to the standard pattern matcher.
+ */
+function tryFullBoilerplate(
+	doc: vscode.TextDocument,
+	position: vscode.Position,
+	linePrefix: string,
+): vscode.InlineCompletionItem | undefined {
+	// Only fire when typing `pragma` or `// SPDX` at start of a line
+	const isPragmaTrigger = /^\s*pragma$/.test(linePrefix);
+	const isSpdxTrigger = /^\s*\/\/\s*SPDX$/.test(linePrefix);
+	if (!isPragmaTrigger && !isSpdxTrigger) { return undefined; }
+
+	if (!isTopOfBareFile(doc, position)) { return undefined; }
+
+	// Get content from doc start up to the start of this line.
+	// If it already has SPDX, fall through (the bare-pragma pattern will complete).
+	const lineStart = new vscode.Position(position.line, 0);
+	const beforeCurrentLine = doc.getText(new vscode.Range(new vscode.Position(0, 0), lineStart));
+	if (/SPDX-License-Identifier/.test(beforeCurrentLine)) { return undefined; }
+
+	// Only safe to replace the file head if it's whitespace/comments only — don't
+	// blow away imports, type declarations, etc.
+	const stripped = stripCommentsAndStrings(beforeCurrentLine).trim();
+	if (stripped.length > 0) { return undefined; }
+
+	// Replace from doc start to current cursor with the full boilerplate.
+	// Tab-to-accept will replace the typed text + any whitespace lines above it.
+	return new vscode.InlineCompletionItem(
+		FULL_BOILERPLATE,
+		new vscode.Range(new vscode.Position(0, 0), position),
+	);
 }
 
 const SOLIDITY_PATTERNS: StaticPattern[] = [
-	// FULL BOILERPLATE: typing "pragma" at the top of an empty/sparse file
-	// suggests SPDX + pragma + contract scaffold all at once. Most common case.
-	{
-		match: /^\s*pragma$/,
-		completion: ' solidity ^0.8.24;\n\ncontract MyContract {\n    constructor() {\n\n    }\n}',
-		when: isTopOfBareFile,
-	},
-	// SPDX with no pragma yet — suggest the full thing including pragma
-	{
-		match: /^\s*\/\/\s*SPDX$/,
-		completion: '-License-Identifier: MIT\npragma solidity ^0.8.24;\n\ncontract MyContract {\n    constructor() {\n\n    }\n}',
-		when: isTopOfBareFile,
-	},
-
-	// SPDX line completions (when not at top of bare file — just complete the comment)
+	// SPDX line completions
 	{ match: /^\s*\/\/\s*SPDX$/, completion: '-License-Identifier: MIT' },
 	{ match: /^\s*\/\/\s*SPDX-?L?i?c?e?n?s?e?-?I?d?e?n?t?i?f?i?e?r?:?$/, completion: ' MIT' },
 
-	// pragma — non-top-of-file (e.g. mid-file pragma additions)
+	// pragma — bare line completion (when boilerplate path didn't fire)
 	{ match: /^\s*pragma$/, completion: ' solidity ^0.8.24;' },
 	{ match: /^\s*pragma\s+solidity$/, completion: ' ^0.8.24;' },
 
@@ -252,6 +288,14 @@ export class KairuStaticCompletionProvider implements vscode.InlineCompletionIte
 		// Don't fire if there's non-whitespace content after the cursor on the same line
 		const lineSuffix = lineText.slice(position.character);
 		if (lineSuffix.trim().length > 0) { return undefined; }
+
+		// 0. Special-case: full boilerplate when starting a bare file.
+		//    Replaces the typed `pragma` (or `// SPDX`) + any preceding whitespace
+		//    with SPDX + pragma + contract scaffold all at once.
+		if (document.languageId === 'solidity') {
+			const boilerplate = tryFullBoilerplate(document, position, linePrefix);
+			if (boilerplate) { return [boilerplate]; }
+		}
 
 		// 1. Try snippet expansions (if user typed a snippet prefix at start of line / after whitespace)
 		if (document.languageId === 'solidity') {
