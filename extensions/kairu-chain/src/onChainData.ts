@@ -224,6 +224,24 @@ function keccakF(s: Uint32Array): void {
 	}
 }
 
+// Cross-extension API for the kairu-ai eth_call tool
+export async function ethCallApi(args: {
+	rpcUrl: string;
+	to: string;
+	signature: string;
+	args?: string[];
+	returnType?: string;
+}): Promise<{ ok: boolean; decoded?: string; raw?: string; error?: string }> {
+	try {
+		const data = encodeCallData(args.signature, args.args ?? []);
+		const resultHex = await rpc<string>(args.rpcUrl, 'eth_call', [{ to: args.to, data }, 'latest']);
+		const decoded = args.returnType ? decodeReturn(args.returnType, resultHex) : resultHex;
+		return { ok: true, raw: resultHex, decoded };
+	} catch (err) {
+		return { ok: false, error: (err as Error).message };
+	}
+}
+
 export function openOnChainDataPanel(context: vscode.ExtensionContext): void {
 	const panel = vscode.window.createWebviewPanel(
 		'kairuOnChain',

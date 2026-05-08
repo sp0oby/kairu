@@ -5,12 +5,14 @@
 
 import * as vscode from 'vscode';
 import { buildProvider, PROVIDER_DISPLAY_NAMES } from '../providers/registry';
-import { ChatMessage, ProviderError, ProviderId } from '../providers/types';
+import { ChatMessage, MessageContentBlock, ProviderError, ProviderId, ToolCall } from '../providers/types';
 import { SecretsManager } from '../secrets';
 import { isSetupComplete, runSetupWizard } from '../setupWizard';
 import { ChatSession } from './session';
 import { SemanticIndex } from '../semantic/index';
 import { buildSemanticContext } from '../semantic/contextBuilder';
+import { BUILTIN_TOOLS, getToolByName } from '../tools/builtin';
+import { ToolContext } from '../tools/types';
 
 interface InboundMessage {
 	type: 'send' | 'cancel' | 'clear' | 'requestState' | 'pickProvider' | 'pickModel' | 'setApiKey' | 'insert';
@@ -18,7 +20,7 @@ interface InboundMessage {
 }
 
 interface OutboundMessage {
-	type: 'state' | 'append' | 'streamStart' | 'streamEnd' | 'error' | 'cleared';
+	type: 'state' | 'append' | 'streamStart' | 'streamEnd' | 'error' | 'cleared' | 'toolStart' | 'toolEnd';
 	state?: {
 		provider: string;
 		model: string;
@@ -28,7 +30,10 @@ interface OutboundMessage {
 	};
 	delta?: string;
 	error?: string;
+	tool?: { name: string; input?: Record<string, unknown>; result?: string; isError?: boolean };
 }
+
+const MAX_AGENT_ITERATIONS = 8;
 
 export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 	public static readonly viewType = 'kairu.chat';
@@ -177,14 +182,109 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 
 		try {
 			const provider = await buildProvider(this.secrets);
-			for await (const chunk of provider.chat({
-				model,
-				messages,
-				maxTokens,
-				signal: this.currentRequest.signal
-			})) {
-				this.session.appendToLast(chunk.delta);
-				this.post({ type: 'append', delta: chunk.delta });
+			const toolsEnabled = provider.supportsTools && config.get<boolean>('toolsEnabled', true);
+			const toolDefinitions = toolsEnabled ? BUILTIN_TOOLS.map(t => t.definition) : undefined;
+
+			const toolCtx: ToolContext = {
+				workspaceRoot: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+				...(this.semanticIndex ? { semanticIndex: this.semanticIndex } : {}),
+			};
+
+			// Agent loop: call provider, collect text + tool_use, run tools, continue until end_turn or max iterations
+			let iteration = 0;
+			while (iteration < MAX_AGENT_ITERATIONS) {
+				iteration++;
+				const collectedText: string[] = [];
+				const collectedToolCalls: ToolCall[] = [];
+				let stopReason: string | undefined;
+
+				for await (const chunk of provider.chat({
+					model,
+					messages,
+					maxTokens,
+					...(toolDefinitions ? { tools: toolDefinitions } : {}),
+					signal: this.currentRequest.signal,
+				})) {
+					if (chunk.delta) {
+						collectedText.push(chunk.delta);
+						this.session.appendToLast(chunk.delta);
+						this.post({ type: 'append', delta: chunk.delta });
+					}
+					if (chunk.toolCall) {
+						collectedToolCalls.push(chunk.toolCall);
+					}
+					if (chunk.stop) {
+						stopReason = chunk.stop;
+					}
+				}
+
+				// If no tool calls were made (or tools disabled), we're done
+				if (collectedToolCalls.length === 0) {
+					break;
+				}
+
+				// Build the assistant message with text + tool_use blocks (Anthropic-shaped content array)
+				const assistantBlocks: MessageContentBlock[] = [];
+				const text = collectedText.join('');
+				if (text.trim()) {
+					assistantBlocks.push({ type: 'text', text });
+				}
+				for (const tc of collectedToolCalls) {
+					assistantBlocks.push({ type: 'tool_use', id: tc.id, name: tc.name, input: tc.input });
+				}
+				messages.push({ role: 'assistant', content: assistantBlocks });
+
+				// Execute each tool sequentially and gather results
+				const toolResultBlocks: MessageContentBlock[] = [];
+				for (const tc of collectedToolCalls) {
+					this.post({ type: 'toolStart', tool: { name: tc.name, input: tc.input } });
+					this.session.appendToLast(`\n\n_◇ ${tc.name}(${JSON.stringify(tc.input).slice(0, 100)})_`);
+					this.post({ type: 'append', delta: `\n\n◇ ${tc.name}(${JSON.stringify(tc.input).slice(0, 100)})\n` });
+
+					const tool = getToolByName(tc.name);
+					let resultText: string;
+					let isError = false;
+					if (!tool) {
+						resultText = `Unknown tool: ${tc.name}`;
+						isError = true;
+					} else {
+						try {
+							resultText = await tool.execute(tc.input, toolCtx);
+						} catch (err) {
+							resultText = `Tool error: ${(err as Error).message}`;
+							isError = true;
+						}
+					}
+
+					toolResultBlocks.push({
+						type: 'tool_result',
+						tool_use_id: tc.id,
+						content: resultText,
+						is_error: isError,
+					});
+
+					const preview = resultText.length > 200 ? resultText.slice(0, 200) + '…' : resultText;
+					this.session.appendToLast(`\n  ${isError ? '✖' : '✓'} ${preview.split('\n').join('\n  ')}\n`);
+					this.post({ type: 'append', delta: `  ${isError ? '✖' : '✓'} ${preview}\n` });
+					this.post({ type: 'toolEnd', tool: { name: tc.name, result: resultText, isError } });
+				}
+
+				// Send tool results back as a user-role message with tool_result blocks
+				messages.push({ role: 'user', content: toolResultBlocks });
+
+				// Visible separator between tool batch and model continuation
+				this.session.appendToLast('\n');
+				this.post({ type: 'append', delta: '\n' });
+
+				// If the provider explicitly told us we're done, break
+				if (stopReason && stopReason !== 'tool_use') {
+					break;
+				}
+			}
+
+			if (iteration >= MAX_AGENT_ITERATIONS) {
+				this.session.appendToLast(`\n\n_(stopped after ${MAX_AGENT_ITERATIONS} agent iterations)_`);
+				this.post({ type: 'append', delta: `\n\n_(stopped after ${MAX_AGENT_ITERATIONS} agent iterations)_` });
 			}
 		} catch (err) {
 			let message = err instanceof ProviderError ? err.message : (err as Error).message;

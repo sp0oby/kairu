@@ -3,7 +3,7 @@
  *  Licensed under the MIT License.
  *--------------------------------------------------------------------------------------------*/
 
-import { AIProvider, ChatChunk, ChatRequest, ProviderError, ProviderId } from './types';
+import { AIProvider, ChatChunk, ChatMessage, ChatRequest, MessageContentBlock, ProviderError, ProviderId } from './types';
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -16,34 +16,82 @@ const KNOWN_MODELS = [
 
 interface AnthropicSSEEvent {
 	type: string;
-	delta?: { type: string; text?: string };
+	index?: number;
+	delta?: {
+		type: string;
+		text?: string;
+		partial_json?: string;
+		stop_reason?: string;
+	};
+	content_block?: {
+		type: string;
+		id?: string;
+		name?: string;
+		input?: Record<string, unknown>;
+	};
 	error?: { type: string; message: string };
+}
+
+// Convert our generic ChatMessage into the Anthropic Messages API shape.
+// Anthropic accepts `content` as either a string (simple text) or an array of blocks.
+function toAnthropicMessage(msg: ChatMessage): { role: string; content: unknown } | null {
+	if (msg.role === 'system') {
+		return null; // system goes in top-level `system` field
+	}
+
+	if (msg.role === 'tool') {
+		// Tool results are sent as user-role messages with tool_result content blocks
+		return {
+			role: 'user',
+			content: [{
+				type: 'tool_result',
+				tool_use_id: msg.toolUseId ?? '',
+				content: typeof msg.content === 'string' ? msg.content : '',
+			}],
+		};
+	}
+
+	if (typeof msg.content === 'string') {
+		return { role: msg.role, content: msg.content };
+	}
+
+	// content is already an array of blocks (assistant turns with tool_use, etc.)
+	return { role: msg.role, content: msg.content };
 }
 
 export class AnthropicProvider implements AIProvider {
 	readonly id: ProviderId = 'anthropic';
 	readonly displayName = 'Anthropic Claude';
 	readonly requiresApiKey = true;
+	readonly supportsTools = true;
 
 	constructor(private readonly apiKey: string) {}
 
 	async listModels(): Promise<string[]> {
-		// Anthropic does not expose a stable list-models endpoint for all keys;
-		// return the known set. Users can also type any model id manually.
 		return KNOWN_MODELS;
 	}
 
 	async *chat(request: ChatRequest): AsyncIterable<ChatChunk> {
-		const systemMessage = request.messages.find(m => m.role === 'system')?.content;
-		const conversation = request.messages.filter(m => m.role !== 'system');
+		const systemMessage = request.messages.find(m => m.role === 'system');
+		const systemContent = typeof systemMessage?.content === 'string' ? systemMessage.content : undefined;
 
-		const body = {
+		const conversation = request.messages
+			.filter(m => m.role !== 'system')
+			.map(toAnthropicMessage)
+			.filter((m): m is { role: string; content: unknown } => m !== null);
+
+		const body: Record<string, unknown> = {
 			model: request.model,
 			max_tokens: request.maxTokens ?? 4096,
-			system: systemMessage,
-			messages: conversation.map(m => ({ role: m.role, content: m.content })),
-			stream: true
+			messages: conversation,
+			stream: true,
 		};
+		if (systemContent) {
+			body.system = systemContent;
+		}
+		if (request.tools && request.tools.length > 0) {
+			body.tools = request.tools;
+		}
 
 		let res: Response;
 		try {
@@ -69,6 +117,10 @@ export class AnthropicProvider implements AIProvider {
 		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
 		let buffer = '';
+
+		// Track tool_use blocks while streaming. Each content_block_start with type=tool_use
+		// begins a tool call; subsequent input_json_delta events accumulate the JSON.
+		const toolBlocks = new Map<number, { id: string; name: string; jsonBuf: string }>();
 
 		while (true) {
 			const { value, done } = await reader.read();
@@ -97,8 +149,39 @@ export class AnthropicProvider implements AIProvider {
 					} catch {
 						continue;
 					}
-					if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta' && parsed.delta.text) {
+
+					if (parsed.type === 'content_block_start' && parsed.content_block?.type === 'tool_use') {
+						toolBlocks.set(parsed.index ?? 0, {
+							id: parsed.content_block.id ?? '',
+							name: parsed.content_block.name ?? '',
+							jsonBuf: '',
+						});
+					} else if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'text_delta' && parsed.delta.text) {
 						yield { delta: parsed.delta.text };
+					} else if (parsed.type === 'content_block_delta' && parsed.delta?.type === 'input_json_delta' && parsed.delta.partial_json !== undefined) {
+						const block = toolBlocks.get(parsed.index ?? 0);
+						if (block) {
+							block.jsonBuf += parsed.delta.partial_json;
+						}
+					} else if (parsed.type === 'content_block_stop') {
+						const block = toolBlocks.get(parsed.index ?? 0);
+						if (block) {
+							let input: Record<string, unknown> = {};
+							try {
+								input = block.jsonBuf ? JSON.parse(block.jsonBuf) : {};
+							} catch {
+								input = { __raw: block.jsonBuf };
+							}
+							yield { toolCall: { id: block.id, name: block.name, input } };
+							toolBlocks.delete(parsed.index ?? 0);
+						}
+					} else if (parsed.type === 'message_delta' && parsed.delta?.stop_reason) {
+						const reason = parsed.delta.stop_reason;
+						if (reason === 'tool_use' || reason === 'end_turn' || reason === 'max_tokens' || reason === 'stop_sequence') {
+							yield { stop: reason };
+						} else {
+							yield { stop: 'other' };
+						}
 					} else if (parsed.type === 'message_stop') {
 						return;
 					} else if (parsed.type === 'error' && parsed.error) {
@@ -109,3 +192,6 @@ export class AnthropicProvider implements AIProvider {
 		}
 	}
 }
+
+// Helper: re-export so callers can build assistant turns containing tool_use blocks
+export type AnthropicMessageContent = MessageContentBlock;

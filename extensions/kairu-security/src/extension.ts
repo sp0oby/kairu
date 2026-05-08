@@ -124,6 +124,12 @@ export function activate(context: vscode.ExtensionContext): void {
 			await runEnvImport();
 		}),
 
+		// Cross-extension API: returns pattern findings for arbitrary source text
+		// Used by kairu-ai's pattern_audit tool
+		vscode.commands.registerCommand('kairu.security.checkPatternsAPI', (src: string) => {
+			return runPatternChecks(src);
+		}),
+
 		vscode.commands.registerCommand('kairu.security.runSlither', async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (!editor || editor.document.languageId !== 'solidity') {

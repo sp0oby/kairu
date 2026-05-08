@@ -5,7 +5,11 @@
 
 import { ChatMessage } from '../providers/types';
 
-export interface SessionMessage extends ChatMessage {
+// Session messages are always plain text — tool_use/tool_result blocks live in
+// the per-request `messages` array, not in the user-visible session log.
+export interface SessionMessage {
+	role: ChatMessage['role'];
+	content: string;
 	id: string;
 	timestamp: number;
 }

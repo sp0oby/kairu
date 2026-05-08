@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { openRpcManager } from './rpcManager';
 import { openTxAnalyzer } from './txAnalyzer';
-import { openOnChainDataPanel } from './onChainData';
+import { openOnChainDataPanel, ethCallApi } from './onChainData';
 import { CHAINS, fetchContractInfo } from './explorer';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -22,6 +22,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		vscode.commands.registerCommand('kairu.chain.openOnChainData', () => {
 			openOnChainDataPanel(context);
+		}),
+
+		// Cross-extension API: used by kairu-ai's eth_call tool
+		vscode.commands.registerCommand('kairu.chain.ethCallAPI', (args: { rpcUrl: string; to: string; signature: string; args?: string[]; returnType?: string }) => {
+			return ethCallApi(args);
 		}),
 
 		vscode.commands.registerCommand('kairu.chain.lookupContract', async () => {

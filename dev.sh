@@ -7,7 +7,7 @@ export NODE_OPTIONS="--experimental-strip-types --no-warnings=ExperimentalWarnin
 
 case "$1" in
   run)
-    exec VSCODE_SKIP_PRELAUNCH=1 ./scripts/code.sh "${@:2}"
+    VSCODE_SKIP_PRELAUNCH=1 exec ./scripts/code.sh "${@:2}"
     ;;
   build)
     exec npm run gulp vscode-darwin-arm64 "${@:2}"

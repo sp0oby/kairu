@@ -141,6 +141,11 @@
 					"default": 4096,
 					"description": "Maximum tokens to generate per response."
 				},
+				"kairu.ai.toolsEnabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Allow the AI to call tools (read/edit files, run forge build/test, run Slither, fetch from Etherscan, etc.) during chat. Currently supported on Anthropic Claude. Disable to make the AI advisory-only."
+				},
 				"kairu.ai.includeActiveFile": {
 					"type": "boolean",
 					"default": true,
