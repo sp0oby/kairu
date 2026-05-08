@@ -1,0 +1,81 @@
+{
+	"name": "kairu-chain",
+	"displayName": "Kairu Chain Tools",
+	"description": "Chain & RPC management, block explorer integration, transaction analysis, exploit replay, and on-chain data tools.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"activationEvents": [
+		"onCommand:kairu.chain.openRpcManager",
+		"onCommand:kairu.chain.openTxAnalyzer",
+		"onCommand:kairu.chain.openExploitReplay",
+		"onCommand:kairu.chain.lookupContract",
+		"onCommand:kairu.chain.openPocGenerator"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "kairu.chain.openRpcManager",
+				"title": "Kairu Chain: Open RPC Manager",
+				"category": "Kairu Chain"
+			},
+			{
+				"command": "kairu.chain.openTxAnalyzer",
+				"title": "Kairu Chain: Open Transaction Analyzer",
+				"category": "Kairu Chain"
+			},
+			{
+				"command": "kairu.chain.openExploitReplay",
+				"title": "Kairu Chain: Open Exploit Replay",
+				"category": "Kairu Chain"
+			},
+			{
+				"command": "kairu.chain.lookupContract",
+				"title": "Kairu Chain: Lookup Contract on Explorer",
+				"category": "Kairu Chain"
+			},
+			{
+				"command": "kairu.chain.openPocGenerator",
+				"title": "Kairu Chain: Open PoC Generator",
+				"category": "Kairu Chain"
+			},
+			{
+				"command": "kairu.chain.openOnChainData",
+				"title": "Kairu Chain: Open On-Chain Data Reader",
+				"category": "Kairu Chain"
+			}
+		],
+		"configuration": {
+			"title": "Kairu Chain",
+			"properties": {
+				"kairu.chain.etherscanApiKey": {
+					"type": "string",
+					"default": "",
+					"markdownDescription": "Etherscan API key for contract/tx lookups. Get one at [etherscan.io/apis](https://etherscan.io/apis)."
+				},
+				"kairu.chain.defaultRpc": {
+					"type": "string",
+					"default": "http://localhost:8545",
+					"description": "Default RPC endpoint (used by Anvil fork manager and on-chain tools)"
+				}
+			}
+		},
+		"menus": {
+			"commandPalette": [
+				{ "command": "kairu.chain.openRpcManager" },
+				{ "command": "kairu.chain.openTxAnalyzer" },
+				{ "command": "kairu.chain.openExploitReplay" },
+				{ "command": "kairu.chain.lookupContract" },
+				{ "command": "kairu.chain.openPocGenerator" }
+			]
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kairu-studio/kairu.git"
+	}
+}

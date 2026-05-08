@@ -1,0 +1,63 @@
+{
+	"name": "kairu-dashboard",
+	"displayName": "Kairu Dashboard",
+	"description": "Unified launcher for all Kairu Web3 tools. Activity bar entry shows all available commands grouped by category.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "kairu-dashboard",
+					"title": "Kairu",
+					"icon": "media/k-icon.svg"
+				}
+			]
+		},
+		"views": {
+			"kairu-dashboard": [
+				{
+					"id": "kairu.dashboard.home",
+					"name": "Kairu Studio",
+					"type": "webview"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "kairu.dashboard.open",
+				"title": "Kairu: Open Dashboard",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.dashboard.welcome",
+				"title": "Kairu: Open Welcome",
+				"category": "Kairu"
+			},
+			{
+				"command": "kairu.dashboard.runDiagnostics",
+				"title": "Kairu: Run Diagnostics (verify install)",
+				"category": "Kairu"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{ "command": "kairu.dashboard.open" },
+				{ "command": "kairu.dashboard.welcome" },
+				{ "command": "kairu.dashboard.runDiagnostics" }
+			]
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kairu-studio/kairu.git"
+	}
+}

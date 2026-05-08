@@ -1,0 +1,86 @@
+{
+	"name": "kairu-security",
+	"displayName": "Kairu Security",
+	"description": "AI-powered security audit, Slither integration, vulnerability detection, and pattern-based analysis for Solidity.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"activationEvents": [
+		"onLanguage:solidity",
+		"onCommand:kairu.security.audit",
+		"onCommand:kairu.security.openAuditPanel",
+		"onCommand:kairu.security.runSlither"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "kairu.security.audit",
+				"title": "Kairu Security: AI Audit Current File",
+				"category": "Kairu Security"
+			},
+			{
+				"command": "kairu.security.auditSelection",
+				"title": "Kairu Security: AI Audit Selection",
+				"category": "Kairu Security"
+			},
+			{
+				"command": "kairu.security.openAuditPanel",
+				"title": "Kairu Security: Open Audit Panel",
+				"category": "Kairu Security"
+			},
+			{
+				"command": "kairu.security.runSlither",
+				"title": "Kairu Security: Run Slither Analysis",
+				"category": "Kairu Security"
+			},
+			{
+				"command": "kairu.security.checkPatterns",
+				"title": "Kairu Security: Check Common Vulnerability Patterns",
+				"category": "Kairu Security"
+			},
+			{
+				"command": "kairu.security.importEnv",
+				"title": "Kairu Security: Import .env Keys to Keychain",
+				"category": "Kairu Security"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "kairu.security.audit",
+					"when": "resourceExtname == .sol",
+					"group": "kairu@4"
+				},
+				{
+					"command": "kairu.security.auditSelection",
+					"when": "resourceExtname == .sol && editorHasSelection",
+					"group": "kairu@5"
+				}
+			],
+			"commandPalette": [
+				{ "command": "kairu.security.audit" },
+				{ "command": "kairu.security.auditSelection", "when": "editorHasSelection" },
+				{ "command": "kairu.security.openAuditPanel" },
+				{ "command": "kairu.security.runSlither" },
+				{ "command": "kairu.security.checkPatterns" },
+				{ "command": "kairu.security.importEnv" }
+			]
+		},
+		"keybindings": [
+			{
+				"command": "kairu.security.audit",
+				"key": "ctrl+shift+a",
+				"mac": "cmd+shift+a",
+				"when": "resourceExtname == .sol && editorTextFocus"
+			}
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kairu-studio/kairu.git"
+	}
+}

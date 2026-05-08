@@ -9,6 +9,8 @@ import { ChatMessage, ProviderError, ProviderId } from '../providers/types';
 import { SecretsManager } from '../secrets';
 import { isSetupComplete, runSetupWizard } from '../setupWizard';
 import { ChatSession } from './session';
+import { SemanticIndex } from '../semantic/index';
+import { buildSemanticContext } from '../semantic/contextBuilder';
 
 interface InboundMessage {
 	type: 'send' | 'cancel' | 'clear' | 'requestState' | 'pickProvider' | 'pickModel' | 'setApiKey' | 'insert';
@@ -38,7 +40,8 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 
 	constructor(
 		private readonly extensionUri: vscode.Uri,
-		private readonly secrets: SecretsManager
+		private readonly secrets: SecretsManager,
+		private readonly semanticIndex?: SemanticIndex
 	) {}
 
 	resolveWebviewView(view: vscode.WebviewView): void {
@@ -148,7 +151,15 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 		}
 
 		const editorContext = includeActiveFile ? this.collectEditorContext() : '';
-		const userContent = editorContext ? `${editorContext}\n\n${text}` : text;
+		const semanticCtx = this.semanticIndex
+			? buildSemanticContext(
+				this.semanticIndex,
+				vscode.window.activeTextEditor?.document.uri.toString(),
+				text
+			)
+			: null;
+		const contextParts = [editorContext, semanticCtx?.summary].filter(Boolean);
+		const userContent = contextParts.length > 0 ? `${contextParts.join('\n\n')}\n\n${text}` : text;
 
 		// Persist what the user sees (without the embedded context)
 		this.session.add('user', text);

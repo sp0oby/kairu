@@ -1,0 +1,113 @@
+{
+	"name": "kairu-web3-tools",
+	"displayName": "Kairu Web3 Tools",
+	"description": "ABI viewer, calldata decoder, storage slot calculator, and contract metadata panels for Web3 developers.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"activationEvents": [
+		"onLanguage:solidity",
+		"onLanguage:json",
+		"onCommand:kairu.web3.openAbiViewer",
+		"onCommand:kairu.web3.openCalldataDecoder",
+		"onCommand:kairu.web3.openStorageCalculator",
+		"onCommand:kairu.web3.openContractMetadata"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "kairu.web3.openAbiViewer",
+				"title": "Kairu: Open ABI Viewer",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.openCalldataDecoder",
+				"title": "Kairu: Open Calldata Decoder",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.openStorageCalculator",
+				"title": "Kairu: Open Storage Slot Calculator",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.openContractMetadata",
+				"title": "Kairu: Open Contract Metadata",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.decodeSelectionCalldata",
+				"title": "Kairu: Decode Selected Calldata",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.openCallGraph",
+				"title": "Kairu: Open Contract Call Graph",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.newContract",
+				"title": "Kairu: New Contract from Template",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.initFoundry",
+				"title": "Kairu: Initialize Foundry Project",
+				"category": "Kairu Web3"
+			},
+			{
+				"command": "kairu.web3.openStorageLayout",
+				"title": "Kairu: Open Storage Layout",
+				"category": "Kairu Web3"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "kairu.web3.openAbiViewer",
+					"when": "resourceExtname == .json || resourceExtname == .sol",
+					"group": "kairu@1"
+				},
+				{
+					"command": "kairu.web3.decodeSelectionCalldata",
+					"when": "editorHasSelection",
+					"group": "kairu@2"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "kairu.web3.openAbiViewer"
+				},
+				{
+					"command": "kairu.web3.openCalldataDecoder"
+				},
+				{
+					"command": "kairu.web3.openStorageCalculator"
+				},
+				{
+					"command": "kairu.web3.openContractMetadata"
+				},
+				{
+					"command": "kairu.web3.decodeSelectionCalldata",
+					"when": "editorHasSelection"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "kairu.web3.openCalldataDecoder",
+				"key": "ctrl+shift+d",
+				"mac": "cmd+shift+d",
+				"when": "editorTextFocus"
+			}
+		]
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kairu-studio/kairu.git"
+	}
+}

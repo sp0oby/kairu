@@ -1,0 +1,14 @@
+{
+	"extends": "../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": "./src",
+		"outDir": "./out",
+		"skipLibCheck": true,
+		"lib": ["ES2024"],
+		"types": ["node"]
+	},
+	"include": [
+		"src/**/*",
+		"../../src/vscode-dts/vscode.d.ts"
+	]
+}

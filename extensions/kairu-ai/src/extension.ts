@@ -12,10 +12,15 @@ import { GeminiProvider } from './providers/gemini';
 import { ProviderId } from './providers/types';
 import { SecretsManager } from './secrets';
 import { runSetupWizard } from './setupWizard';
+import { SemanticIndex } from './semantic/index';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const secrets = new SecretsManager(context.secrets);
-	const chatProvider = new KairuChatViewProvider(context.extensionUri, secrets);
+	const semanticIndex = new SemanticIndex(context);
+	const chatProvider = new KairuChatViewProvider(context.extensionUri, secrets, semanticIndex);
+
+	// Start semantic indexing in the background (non-blocking)
+	semanticIndex.startWatching().catch(() => { /* silently ignore startup errors */ });
 
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(KairuChatViewProvider.viewType, chatProvider, {
@@ -160,6 +165,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			vscode.window.showInformationMessage(
 				`Kairu: API key for ${picked.label} stored in OS keychain.`
 			);
+		}),
+
+		vscode.commands.registerCommand('kairu.ai.importApiKey', async (provider: string, value: string) => {
+			if (!provider || !value) { return; }
+			const valid: ProviderId[] = ['anthropic', 'openai', 'gemini', 'openai-compatible'];
+			if (!valid.includes(provider as ProviderId)) { return; }
+			await secrets.set(provider as ProviderId, value);
 		}),
 
 		vscode.commands.registerCommand('kairu.ai.deleteApiKey', async () => {

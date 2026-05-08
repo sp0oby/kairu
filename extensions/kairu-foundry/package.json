@@ -1,0 +1,125 @@
+{
+	"name": "kairu-foundry",
+	"displayName": "Kairu Foundry",
+	"description": "Native Foundry integration: forge build/test, anvil fork manager, cast tools, gas analysis, and test runner panel.",
+	"version": "0.1.0",
+	"publisher": "kairu",
+	"license": "MIT",
+	"engines": {
+		"vscode": "*"
+	},
+	"activationEvents": [
+		"workspaceContains:foundry.toml",
+		"onCommand:kairu.foundry.build",
+		"onCommand:kairu.foundry.test",
+		"onCommand:kairu.foundry.openTestPanel",
+		"onCommand:kairu.foundry.openAnvilPanel",
+		"onCommand:kairu.foundry.openGasPanel"
+	],
+	"main": "./out/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "kairu.foundry.build",
+				"title": "Kairu Foundry: Build",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.test",
+				"title": "Kairu Foundry: Run All Tests",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.testFile",
+				"title": "Kairu Foundry: Run Tests in Current File",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.testFunction",
+				"title": "Kairu Foundry: Run Test at Cursor",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.openTestPanel",
+				"title": "Kairu Foundry: Open Test Runner",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.openAnvilPanel",
+				"title": "Kairu Foundry: Open Anvil Fork Manager",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.openGasPanel",
+				"title": "Kairu Foundry: Open Gas Snapshot",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.cast",
+				"title": "Kairu Foundry: Run Cast Command",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.checkInstall",
+				"title": "Kairu Foundry: Check Foundry Installation",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.openCoverage",
+				"title": "Kairu Foundry: Open Coverage Panel",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.clearCoverageDecorations",
+				"title": "Kairu Foundry: Clear Coverage Gutters",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.openTraceViewer",
+				"title": "Kairu Foundry: Open Trace Viewer",
+				"category": "Kairu Foundry"
+			}
+		],
+		"keybindings": [
+			{
+				"command": "kairu.foundry.test",
+				"key": "ctrl+shift+t",
+				"mac": "cmd+shift+t",
+				"when": "workspaceFolderCount > 0"
+			},
+			{
+				"command": "kairu.foundry.build",
+				"key": "ctrl+shift+b",
+				"mac": "cmd+shift+b",
+				"when": "workspaceFolderCount > 0"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "kairu.foundry.testFunction",
+					"when": "resourceExtname == .sol && resourceFilename =~ /\\.t\\.sol$/",
+					"group": "kairu@3"
+				}
+			],
+			"commandPalette": [
+				{ "command": "kairu.foundry.build" },
+				{ "command": "kairu.foundry.test" },
+				{ "command": "kairu.foundry.testFile", "when": "resourceExtname == .sol" },
+				{ "command": "kairu.foundry.testFunction", "when": "resourceExtname == .sol" },
+				{ "command": "kairu.foundry.openTestPanel" },
+				{ "command": "kairu.foundry.openAnvilPanel" },
+				{ "command": "kairu.foundry.openGasPanel" },
+				{ "command": "kairu.foundry.cast" },
+				{ "command": "kairu.foundry.checkInstall" },
+				{ "command": "kairu.foundry.openCoverage" },
+				{ "command": "kairu.foundry.clearCoverageDecorations" },
+				{ "command": "kairu.foundry.openTraceViewer" }
+			]
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/kairu-studio/kairu.git"
+	}
+}
