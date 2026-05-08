@@ -9,8 +9,12 @@ import { openCallGraph } from './callGraph';
 import { openStorageLayoutPanel } from './storageLayout';
 import { parseAbi } from './abi';
 import { openTemplatePicker, openFoundryInit } from './templates/picker';
+import { activateAutoFileTemplates } from './templates/autoFile';
 
 export function activate(context: vscode.ExtensionContext): void {
+	// Auto-fill empty .sol / .t.sol / .s.sol / .vy files with starter templates
+	activateAutoFileTemplates(context);
+
 	context.subscriptions.push(
 
 		vscode.commands.registerCommand('kairu.web3.openAbiViewer', () => {

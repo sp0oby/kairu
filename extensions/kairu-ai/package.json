@@ -158,18 +158,23 @@
 				},
 				"kairu.ai.inlineCompletions.enabled": {
 					"type": "boolean",
-					"default": false,
-					"description": "Enable AI-powered inline completions (ghost text). Off by default — chatty completions can interfere with manual typing. Toggle via 'Kairu: Toggle Inline Completions'."
+					"default": true,
+					"description": "AI-powered inline completions (ghost text). Suggests what you might be typing as you go — like Copilot or Tabnine. Toggle via 'Kairu: Toggle Inline Completions'."
 				},
 				"kairu.ai.inlineCompletions.model": {
 					"type": "string",
-					"default": "",
-					"description": "Optional override model for inline completions. Defaults to kairu.ai.model. Use a fast model (e.g. claude-haiku-4-5) for low-latency completions."
+					"default": "claude-haiku-4-5-20251001",
+					"description": "Model used for inline completions. Defaults to Claude Haiku for low latency. Override to use a different model (e.g. gpt-4o-mini for OpenAI, gemini-2.5-flash for Gemini)."
 				},
 				"kairu.ai.inlineCompletions.maxTokens": {
 					"type": "number",
-					"default": 200,
+					"default": 120,
 					"description": "Max tokens per inline completion. Lower = faster + cheaper, but completions may be cut off."
+				},
+				"kairu.ai.inlineCompletions.debounceMs": {
+					"type": "number",
+					"default": 350,
+					"description": "Delay in milliseconds after typing stops before firing a completion request. Higher = fewer requests, more deliberate suggestions."
 				},
 				"kairu.ai.includeActiveFile": {
 					"type": "boolean",

@@ -18,6 +18,16 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"configuration": {
+			"title": "Kairu Web3 Tools",
+			"properties": {
+				"kairu.web3.autoFileTemplate": {
+					"type": "boolean",
+					"default": true,
+					"description": "Auto-fill empty .sol, .t.sol, .s.sol, and .vy files with a starter template (SPDX, pragma, contract/test/script scaffold) when opened. Detects the file kind from the name (e.g. MyToken.sol → contract, MyToken.t.sol → Foundry test)."
+				}
+			}
+		},
 		"commands": [
 			{
 				"command": "kairu.web3.openAbiViewer",

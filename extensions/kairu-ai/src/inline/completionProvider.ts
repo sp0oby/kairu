@@ -40,13 +40,21 @@ export class KairuInlineCompletionProvider implements vscode.InlineCompletionIte
 		token: vscode.CancellationToken,
 	): Promise<vscode.InlineCompletionItem[] | undefined> {
 		const config = vscode.workspace.getConfiguration('kairu.ai');
-		if (!config.get<boolean>('inlineCompletions.enabled', false)) {
+		if (!config.get<boolean>('inlineCompletions.enabled', true)) {
 			return undefined;
 		}
 
 		// Cancel any in-flight request from a previous keystroke
 		this.inFlight?.abort();
 		this.inFlight = new AbortController();
+
+		// Debounce: wait briefly after typing stops before firing the AI request.
+		// If the cancellation token fires (user typed again), bail out before sending.
+		const debounceMs = config.get<number>('inlineCompletions.debounceMs', 350);
+		await new Promise(resolve => setTimeout(resolve, debounceMs));
+		if (token.isCancellationRequested) {
+			return undefined;
+		}
 
 		// Don't fire mid-word — wait for a natural break (space, newline, dot, paren, etc.)
 		const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
