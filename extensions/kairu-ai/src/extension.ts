@@ -84,6 +84,19 @@ export function activate(context: vscode.ExtensionContext): void {
 			vscode.window.showInformationMessage(`Kairu inline completions: ${!current ? 'enabled' : 'disabled'}`);
 		}),
 
+		// Fired by the static completion provider after the user accepts the
+		// pragma boilerplate. Inserts the SPDX line at the very top of the file.
+		vscode.commands.registerCommand('kairu.ai.insertSpdxAbove', async (_pragmaLine: number) => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) { return; }
+			const doc = editor.document;
+			// Don't add SPDX if it's already there (defensive double-check)
+			if (/SPDX-License-Identifier/.test(doc.getText())) { return; }
+			await editor.edit(builder => {
+				builder.insert(new vscode.Position(0, 0), '// SPDX-License-Identifier: MIT\n');
+			});
+		}),
+
 		vscode.commands.registerCommand('kairu.ai.clearChat', () => {
 			chatProvider.clearSession();
 		}),

@@ -52,8 +52,10 @@ function stripCommentsAndStrings(src: string): string {
 		.replace(/'[^'\n]*'/g, "''");
 }
 
-const FULL_BOILERPLATE = `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.24;
+// Body that goes AFTER the typed `pragma` word, as ghost text.
+// SPDX is inserted above-the-line via a post-accept command, since VSCode's
+// inline completion API only ghost-renders text that appends at the cursor.
+const PRAGMA_TAIL = ` solidity ^0.8.24;
 
 contract MyContract {
     constructor() {
@@ -62,44 +64,46 @@ contract MyContract {
 }`;
 
 /**
- * Special pre-pattern handler: when typing `pragma` (or `// SPDX`) at the top
- * of a file that has no SPDX line yet, replace the typed text + everything
- * before it on the file with the full boilerplate (SPDX + pragma + contract).
+ * Pragma-or-SPDX-at-top-of-bare-file boilerplate.
  *
- * This lets us prepend SPDX above the cursor — something a normal
- * InlineCompletionItem with `Range(position, position)` cannot do.
+ * Returns ghost text that COMPLETES what the user typed (so it actually renders
+ * as ghost text), plus a post-acceptance command that inserts the SPDX line
+ * above whatever line the trigger fired on. Workflow:
  *
- * Returns the InlineCompletionItem if applicable, or undefined to fall through
- * to the standard pattern matcher.
+ *   1. User types `pragma` in an empty .sol file
+ *   2. Ghost text appears: ` solidity ^0.8.24;\n\ncontract MyContract { ... }`
+ *   3. User presses Tab
+ *   4. VSCode inserts the ghost text after `pragma`
+ *   5. Command fires → inserts `// SPDX-License-Identifier: MIT\n` on line 0
  */
 function tryFullBoilerplate(
 	doc: vscode.TextDocument,
 	position: vscode.Position,
 	linePrefix: string,
 ): vscode.InlineCompletionItem | undefined {
-	// Only fire when typing `pragma` or `// SPDX` at start of a line
 	const isPragmaTrigger = /^\s*pragma$/.test(linePrefix);
-	const isSpdxTrigger = /^\s*\/\/\s*SPDX$/.test(linePrefix);
-	if (!isPragmaTrigger && !isSpdxTrigger) { return undefined; }
-
+	if (!isPragmaTrigger) { return undefined; }
 	if (!isTopOfBareFile(doc, position)) { return undefined; }
 
-	// Get content from doc start up to the start of this line.
-	// If it already has SPDX, fall through (the bare-pragma pattern will complete).
-	const lineStart = new vscode.Position(position.line, 0);
-	const beforeCurrentLine = doc.getText(new vscode.Range(new vscode.Position(0, 0), lineStart));
-	if (/SPDX-License-Identifier/.test(beforeCurrentLine)) { return undefined; }
+	// Bail if SPDX already exists somewhere — don't double-insert.
+	const fullText = doc.getText();
+	if (/SPDX-License-Identifier/.test(fullText)) {
+		// Just complete the pragma + add contract scaffold. No SPDX needed.
+		return new vscode.InlineCompletionItem(
+			PRAGMA_TAIL,
+			new vscode.Range(position, position),
+		);
+	}
 
-	// Only safe to replace the file head if it's whitespace/comments only — don't
-	// blow away imports, type declarations, etc.
-	const stripped = stripCommentsAndStrings(beforeCurrentLine).trim();
-	if (stripped.length > 0) { return undefined; }
-
-	// Replace from doc start to current cursor with the full boilerplate.
-	// Tab-to-accept will replace the typed text + any whitespace lines above it.
+	// SPDX not in the file yet → ghost the pragma+contract, queue SPDX prepend on accept.
 	return new vscode.InlineCompletionItem(
-		FULL_BOILERPLATE,
-		new vscode.Range(new vscode.Position(0, 0), position),
+		PRAGMA_TAIL,
+		new vscode.Range(position, position),
+		{
+			command: 'kairu.ai.insertSpdxAbove',
+			title: 'Insert SPDX above',
+			arguments: [position.line],
+		},
 	);
 }
 
@@ -297,29 +301,35 @@ export class KairuStaticCompletionProvider implements vscode.InlineCompletionIte
 			if (boilerplate) { return [boilerplate]; }
 		}
 
-		// 1. Try snippet expansions (if user typed a snippet prefix at start of line / after whitespace)
+		// 1. Snippet expansions: if user typed a snippet prefix, ghost-text the rest.
+		// Append-only (Range = position to position) so VSCode actually renders as
+		// ghost text. Accepting Tab will keep the typed prefix and append the body.
 		if (document.languageId === 'solidity') {
 			const snippetMatch = linePrefix.match(/(?:^|\s)([a-z][a-z0-9_-]*)$/i);
 			if (snippetMatch && snippetMatch[1].length >= 2) {
 				const typedPrefix = snippetMatch[1];
 				const snippets = loadSnippets();
 
-				// Exact match wins
+				// Exact match wins (e.g. user typed "ktest" → emit body on next line)
 				const exact = snippets.find(s => s.prefix === typedPrefix);
 				if (exact) {
-					const wordStart = position.translate(0, -typedPrefix.length);
-					return [new vscode.InlineCompletionItem(exact.body, new vscode.Range(wordStart, position))];
+					return [new vscode.InlineCompletionItem(
+						'\n' + exact.body,
+						new vscode.Range(position, position),
+					)];
 				}
 
-				// Otherwise, find the shortest prefix-match (most likely intent)
+				// Otherwise, find the shortest prefix-match — typed "kt" → suggest rest of "ktest" + body
 				const candidates = snippets
 					.filter(s => s.prefix.startsWith(typedPrefix) && s.prefix !== typedPrefix)
 					.sort((a, b) => a.prefix.length - b.prefix.length);
 				if (candidates.length > 0) {
 					const best = candidates[0];
-					// Replace the typed prefix word with the full snippet body (Tab-to-accept replaces "kt" → full ktest body)
-					const wordStart = position.translate(0, -typedPrefix.length);
-					return [new vscode.InlineCompletionItem(best.body, new vscode.Range(wordStart, position))];
+					const remainder = best.prefix.slice(typedPrefix.length);
+					return [new vscode.InlineCompletionItem(
+						remainder + '\n' + best.body,
+						new vscode.Range(position, position),
+					)];
 				}
 			}
 		}
