@@ -35,16 +35,22 @@ interface StaticPattern {
 	when?: (doc: vscode.TextDocument, position: vscode.Position) => boolean;
 }
 
-// True when the user is in the empty / sparse top-of-file region — we use this
-// to decide whether typing "pragma" should suggest the FULL boilerplate
-// (SPDX + pragma + contract scaffold) vs just completing the line.
-function isTopOfBareFile(doc: vscode.TextDocument, position: vscode.Position): boolean {
-	if (position.line > 4) { return false; }
-	const fullText = doc.getText().trim();
-	// Sparse = under 60 chars, no contract/library/interface keyword yet
-	if (fullText.length > 60) { return false; }
-	if (/\b(contract|library|interface)\b/.test(fullText)) { return false; }
-	return true;
+// True when the file does not yet contain any contract/library/interface
+// declaration — the boilerplate will give them one. As long as nothing's
+// declared yet, typing "pragma" suggests the full scaffold.
+function isTopOfBareFile(doc: vscode.TextDocument, _position: vscode.Position): boolean {
+	const fullText = stripCommentsAndStrings(doc.getText());
+	return !/\b(contract|library|interface|abstract\s+contract)\s+\w/.test(fullText);
+}
+
+// Quick comment/string stripper so a comment "// contract MyContract" doesn't
+// fool the boilerplate gate. Best-effort, doesn't need to be perfect.
+function stripCommentsAndStrings(src: string): string {
+	return src
+		.replace(/\/\*[\s\S]*?\*\//g, '')   // /* ... */ block comments
+		.replace(/\/\/[^\n]*/g, '')          // // line comments
+		.replace(/"[^"\n]*"/g, '""')         // double-quoted strings
+		.replace(/'[^'\n]*'/g, "''");        // single-quoted strings
 }
 
 const SOLIDITY_PATTERNS: StaticPattern[] = [
