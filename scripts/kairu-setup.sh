@@ -29,30 +29,29 @@ npm_config_build_from_source=false \
 echo "  done"
 echo ""
 
-# Install per-extension deps so bundled extensions (prettier, eslint, solidity,
-# editorconfig, etc.) can actually load. Each gets its own --ignore-scripts pass.
-echo "▶ Installing dependencies for bundled extensions..."
-EXT_LIST=(
-  prettier
-  vscode-eslint/client
-  vscode-eslint/server
-  editorconfig
-  solidity
-  tailwindcss
-)
-for ext_path in "${EXT_LIST[@]}"; do
-  dir="extensions/$ext_path"
-  if [ -f "$dir/package.json" ] && [ ! -d "$dir/node_modules" ]; then
-    printf "  %-32s" "$ext_path"
-    if (cd "$dir" && npm_config_ignore_scripts=true npm install --quiet --no-audit --no-fund 2>&1 | tail -3 >/dev/null); then
-      echo "✓"
-    else
-      echo "✖ (skipped — non-critical)"
-    fi
-  elif [ -d "$dir/node_modules" ]; then
-    printf "  %-32s already installed\n" "$ext_path"
+# Auto-discover any extension that has its own package.json with dependencies
+# but no node_modules folder yet, and install them. This way new extensions are
+# picked up automatically — no need to maintain a hardcoded list.
+echo "▶ Installing dependencies for bundled extensions (auto-discovered)..."
+COUNT=0
+SKIPPED=0
+while IFS= read -r pkg; do
+  dir="$(dirname "$pkg")"
+  # Skip if no deps declared, or node_modules already exists
+  has_deps=$(node -p "Object.keys((require('./$pkg').dependencies||{})).length+Object.keys((require('./$pkg').optionalDependencies||{})).length" 2>/dev/null || echo "0")
+  [ "$has_deps" = "0" ] && continue
+  [ -d "$dir/node_modules" ] && continue
+  rel="${dir#extensions/}"
+  printf "  %-40s" "$rel"
+  if (cd "$dir" && npm_config_ignore_scripts=true npm install --quiet --no-audit --no-fund 2>/dev/null); then
+    echo "✓"
+    COUNT=$((COUNT+1))
+  else
+    echo "✖"
+    SKIPPED=$((SKIPPED+1))
   fi
-done
+done < <(find extensions -maxdepth 3 -name package.json -not -path '*/node_modules/*' -not -path '*/out/*' -not -path '*/dist/*' 2>/dev/null)
+echo "  → installed $COUNT, skipped $SKIPPED"
 echo ""
 
 # Compile bundled extensions (typescript-language-features, json, markdown, etc.)
