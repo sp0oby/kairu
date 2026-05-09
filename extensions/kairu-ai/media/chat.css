@@ -227,6 +227,43 @@ body {
 	letter-spacing: 0.2px;
 }
 
+.kairu-status-tag.kairu-status-warn {
+	color: #f78c6c;
+	border-color: rgba(247, 140, 108, 0.2);
+	background: rgba(247, 140, 108, 0.06);
+}
+
+.kairu-status-tag.kairu-status-free {
+	color: #a8d89b;
+	border-color: rgba(168, 216, 155, 0.2);
+	background: rgba(168, 216, 155, 0.06);
+}
+
+.kairu-setup-cta {
+	display: flex;
+	justify-content: center;
+	margin: 4px 0 2px;
+}
+
+.kairu-setup-btn {
+	padding: 9px 20px;
+	background: rgba(130, 170, 255, 0.12);
+	color: #82aaff;
+	border: 1px solid rgba(130, 170, 255, 0.3);
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	font-family: inherit;
+	letter-spacing: 0.1px;
+	transition: background 120ms ease, border-color 120ms ease;
+}
+
+.kairu-setup-btn:hover {
+	background: rgba(130, 170, 255, 0.22);
+	border-color: rgba(130, 170, 255, 0.5);
+}
+
 /* === Messages === */
 
 .kairu-message {

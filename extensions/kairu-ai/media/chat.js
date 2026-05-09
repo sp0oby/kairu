@@ -97,6 +97,23 @@
 	];
 
 	function buildEmptyState(state) {
+		// Not configured yet — show a friendly setup CTA
+		if (!state || !state.ready) {
+			return `<div class="kairu-empty">
+				<div class="kairu-empty-mark">K</div>
+				<div>
+					<h1 class="kairu-empty-title">Connect an AI model to get started</h1>
+					<p class="kairu-empty-sub">OpenRouter offers free models — no credit card required. Or bring your own Anthropic, OpenAI, or Gemini key.</p>
+				</div>
+				<div class="kairu-setup-cta">
+					<button class="kairu-setup-btn" id="setup-btn">Setup AI (free with OpenRouter)</button>
+				</div>
+				<div class="kairu-status-bar">
+					<span class="kairu-status-tag kairu-status-warn">No model configured</span>
+				</div>
+			</div>`;
+		}
+
 		const chips = SUGGESTED_PROMPTS.map(p =>
 			`<button class="kairu-prompt-chip" data-prompt="${escapeHtml(p.text)}">
 				<span class="kairu-prompt-chip-icon">${p.icon}</span>
@@ -104,10 +121,9 @@
 			</button>`
 		).join('');
 
-		const providerLabel = state ? escapeHtml(state.provider) : 'Ollama (local)';
-		const modelLabel = state && state.model && state.model !== '(no model)'
-			? escapeHtml(state.model)
-			: 'no model selected';
+		const providerLabel = escapeHtml(state.provider);
+		const modelLabel = escapeHtml(state.model);
+		const isFreeModel = state.model && state.model.endsWith(':free');
 
 		return `<div class="kairu-empty">
 			<div class="kairu-empty-mark">K</div>
@@ -118,7 +134,7 @@
 			<div class="kairu-prompt-grid">${chips}</div>
 			<div class="kairu-status-bar">
 				<span class="kairu-status-tag">${providerLabel}</span>
-				<span class="kairu-status-tag">${modelLabel}</span>
+				<span class="kairu-status-tag${isFreeModel ? ' kairu-status-free' : ''}">${modelLabel}${isFreeModel ? ' · free' : ''}</span>
 			</div>
 		</div>`;
 	}
@@ -194,6 +210,13 @@
 	clearBtn.addEventListener('click', () => vscode.postMessage({ type: 'clear' }));
 	providerPill.addEventListener('click', () => vscode.postMessage({ type: 'pickProvider' }));
 	modelPill.addEventListener('click', () => vscode.postMessage({ type: 'pickModel' }));
+
+	// Delegate click on the setup button (rendered inside the empty state)
+	document.addEventListener('click', e => {
+		if (e.target && e.target.id === 'setup-btn') {
+			vscode.postMessage({ type: 'setup' });
+		}
+	});
 
 	messagesEl.addEventListener('click', e => {
 		const promptChip = e.target.closest('.kairu-prompt-chip');

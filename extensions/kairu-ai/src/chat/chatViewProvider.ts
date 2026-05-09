@@ -15,7 +15,7 @@ import { BUILTIN_TOOLS, getToolByName } from '../tools/builtin';
 import { ToolContext } from '../tools/types';
 
 interface InboundMessage {
-	type: 'send' | 'cancel' | 'clear' | 'requestState' | 'pickProvider' | 'pickModel' | 'setApiKey' | 'insert';
+	type: 'send' | 'cancel' | 'clear' | 'requestState' | 'pickProvider' | 'pickModel' | 'setApiKey' | 'insert' | 'setup';
 	text?: string;
 }
 
@@ -27,6 +27,8 @@ interface OutboundMessage {
 		messages: { role: string; content: string }[];
 		busy: boolean;
 		context: { fileName: string; lang: string; isSelection: boolean; lineRange?: string } | null;
+		/** True when provider+model+key are all configured and ready */
+		ready: boolean;
 	};
 	delta?: string;
 	error?: string;
@@ -80,6 +82,10 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 			case 'clear':
 				this.session.clear();
 				this.post({ type: 'cleared' });
+				this.postState();
+				return;
+			case 'setup':
+				await vscode.commands.executeCommand('kairu.ai.setup');
 				this.postState();
 				return;
 			case 'requestState':
@@ -344,9 +350,6 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	async sendMessageProgrammatic(text: string): Promise<void> {
-		// Inject text into the input and send, as if the user typed it.
-		// If the webview is open, post to it so the text appears in the input first.
-		this.post({ type: 'state', state: { ...this.buildStatePayload(), pendingText: text } } as unknown as OutboundMessage);
 		await this.sendUserMessage(text);
 	}
 
@@ -372,7 +375,8 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 			model: model || '(no model)',
 			messages: this.session.getMessages().map(m => ({ role: m.role, content: m.content })),
 			busy: this.busy,
-			context
+			context,
+			ready: Boolean(model),
 		};
 	}
 
