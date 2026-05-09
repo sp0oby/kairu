@@ -126,6 +126,11 @@
 				"command": "kairu.ai.sendMessage",
 				"title": "Kairu: Send Message to AI Chat",
 				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.reviewDiff",
+				"title": "Kairu: Review Changes with AI (Security + Correctness)",
+				"category": "Kairu"
 			}
 		],
 		"submenus": [

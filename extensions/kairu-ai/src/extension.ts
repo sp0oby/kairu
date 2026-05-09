@@ -16,6 +16,7 @@ import { SemanticIndex } from './semantic/index';
 import { KairuInlineCompletionProvider } from './inline/completionProvider';
 import { KairuStaticCompletionProvider } from './inline/staticCompletionProvider';
 import { generateCommitMessage } from './commitMessage';
+import { reviewDiffWithAI } from './reviewDiff';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const secrets = new SecretsManager(context.secrets);
@@ -75,6 +76,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		vscode.commands.registerCommand('kairu.ai.generateCommitMessage', async () => {
 			await generateCommitMessage(secrets);
+		}),
+
+		vscode.commands.registerCommand('kairu.ai.reviewDiff', async () => {
+			await reviewDiffWithAI();
 		}),
 
 		vscode.commands.registerCommand('kairu.ai.toggleInlineCompletions', async () => {
