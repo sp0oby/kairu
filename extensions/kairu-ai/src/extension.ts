@@ -101,6 +101,13 @@ export function activate(context: vscode.ExtensionContext): void {
 			chatProvider.clearSession();
 		}),
 
+		// Programmatic send — lets other extensions (e.g. kairu-foundry) push messages into chat
+		vscode.commands.registerCommand('kairu.ai.sendMessage', async (text: string) => {
+			if (!text) { return; }
+			await vscode.commands.executeCommand('kairu.chat.focus');
+			await chatProvider.sendMessageProgrammatic(text);
+		}),
+
 		vscode.commands.registerCommand('kairu.ai.explainSelection', () => chatProvider.explainSelection()),
 		vscode.commands.registerCommand('kairu.ai.findVulnerabilities', () => chatProvider.findVulnerabilities()),
 		vscode.commands.registerCommand('kairu.ai.generateFoundryTests', () => chatProvider.generateFoundryTests()),

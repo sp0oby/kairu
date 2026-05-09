@@ -325,38 +325,7 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 	}
 
 	private postState(): void {
-		const config = vscode.workspace.getConfiguration('kairu.ai');
-		const provider = config.get<ProviderId>('provider', 'ollama');
-		const model = config.get<string>('model', '');
-		const includeActiveFile = config.get<boolean>('includeActiveFile', true);
-
-		let context: { fileName: string; lang: string; isSelection: boolean; lineRange?: string } | null = null;
-		if (includeActiveFile) {
-			const editor = vscode.window.activeTextEditor;
-			if (editor) {
-				const fileName = editor.document.fileName.split(/[\\/]/).pop() ?? editor.document.fileName;
-				const isSelection = !editor.selection.isEmpty;
-				context = {
-					fileName,
-					lang: editor.document.languageId,
-					isSelection,
-					lineRange: isSelection
-						? `L${editor.selection.start.line + 1}-${editor.selection.end.line + 1}`
-						: undefined
-				};
-			}
-		}
-
-		this.post({
-			type: 'state',
-			state: {
-				provider: PROVIDER_DISPLAY_NAMES[provider] ?? provider,
-				model: model || '(no model)',
-				messages: this.session.getMessages().map(m => ({ role: m.role, content: m.content })),
-				busy: this.busy,
-				context
-			}
-		});
+		this.post({ type: 'state', state: this.buildStatePayload() });
 	}
 
 	updateContext(): void {
@@ -372,6 +341,39 @@ export class KairuChatViewProvider implements vscode.WebviewViewProvider {
 		this.session.clear();
 		this.post({ type: 'cleared' });
 		this.postState();
+	}
+
+	async sendMessageProgrammatic(text: string): Promise<void> {
+		// Inject text into the input and send, as if the user typed it.
+		// If the webview is open, post to it so the text appears in the input first.
+		this.post({ type: 'state', state: { ...this.buildStatePayload(), pendingText: text } } as unknown as OutboundMessage);
+		await this.sendUserMessage(text);
+	}
+
+	private buildStatePayload() {
+		const config = vscode.workspace.getConfiguration('kairu.ai');
+		const provider = config.get<ProviderId>('provider', 'ollama');
+		const model = config.get<string>('model', '');
+		const includeActiveFile = config.get<boolean>('includeActiveFile', true);
+		let context: { fileName: string; lang: string; isSelection: boolean; lineRange?: string } | null = null;
+		if (includeActiveFile) {
+			const editor = vscode.window.activeTextEditor;
+			if (editor) {
+				const fileName = editor.document.fileName.split(/[\\/]/).pop() ?? editor.document.fileName;
+				const isSelection = !editor.selection.isEmpty;
+				context = {
+					fileName, lang: editor.document.languageId, isSelection,
+					lineRange: isSelection ? `L${editor.selection.start.line + 1}-${editor.selection.end.line + 1}` : undefined
+				};
+			}
+		}
+		return {
+			provider: PROVIDER_DISPLAY_NAMES[provider] ?? provider,
+			model: model || '(no model)',
+			messages: this.session.getMessages().map(m => ({ role: m.role, content: m.content })),
+			busy: this.busy,
+			context
+		};
 	}
 
 	explainSelection(): void {

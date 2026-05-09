@@ -10,6 +10,7 @@
 	},
 	"activationEvents": [
 		"workspaceContains:foundry.toml",
+		"onLanguage:solidity",
 		"onCommand:kairu.foundry.build",
 		"onCommand:kairu.foundry.test",
 		"onCommand:kairu.foundry.openTestPanel",
@@ -77,6 +78,26 @@
 			{
 				"command": "kairu.foundry.openTraceViewer",
 				"title": "Kairu Foundry: Open Trace Viewer",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.runTestByName",
+				"title": "Kairu Foundry: Run Test by Name",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.runTestVerbose",
+				"title": "Kairu Foundry: Run Test (Verbose Trace)",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.runTestsByContract",
+				"title": "Kairu Foundry: Run All Tests in Contract",
+				"category": "Kairu Foundry"
+			},
+			{
+				"command": "kairu.foundry.debugTestWithAI",
+				"title": "Kairu Foundry: Debug Test with AI",
 				"category": "Kairu Foundry"
 			}
 		],

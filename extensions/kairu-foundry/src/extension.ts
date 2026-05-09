@@ -16,8 +16,18 @@ import { openAnvilPanel } from './panels/anvilPanel';
 import { openGasPanel } from './panels/gasPanel';
 import { openCoveragePanel, clearCoverageDecorations } from './panels/coveragePanel';
 import { openTracePanel } from './panels/tracePanel';
+import { FoundryTestCodeLensProvider } from './codeLens';
 
 export function activate(context: vscode.ExtensionContext): void {
+	// CodeLens: Run / Debug with AI / -vvvv buttons on test functions
+	const codeLensProvider = new FoundryTestCodeLensProvider();
+	context.subscriptions.push(
+		vscode.languages.registerCodeLensProvider(
+			[{ language: 'solidity', pattern: '**/*.t.sol' }, { language: 'solidity', pattern: '**/*.test.sol' }],
+			codeLensProvider
+		)
+	);
+
 	// Background install check on activation
 	checkFoundryInstall().then(install => {
 		if (!install.forge) {
@@ -140,6 +150,83 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		vscode.commands.registerCommand('kairu.foundry.openTraceViewer', () => {
 			openTracePanel(context);
+		}),
+
+		// CodeLens commands — fired by the inline Run/Debug buttons
+		vscode.commands.registerCommand('kairu.foundry.runTestByName', async (fnName: string) => {
+			const cwd = getWorkspaceRoot();
+			if (!cwd) { return; }
+			const channel = vscode.window.createOutputChannel('Kairu Foundry Tests');
+			channel.show();
+			channel.appendLine(`$ forge test --match-test ^${fnName}$\n`);
+			const results = await forgeTest(cwd, fnName, line => channel.appendLine(line));
+			const r = results.find(r => r.name === fnName);
+			if (r?.status === 'pass') {
+				vscode.window.showInformationMessage(`✓ ${fnName} passed (gas: ${r.gasUsed?.toLocaleString() ?? '?'})`);
+			} else if (r?.status === 'fail') {
+				vscode.window.showErrorMessage(`✖ ${fnName} failed: ${r.reason ?? 'see output'}`);
+			}
+		}),
+
+		vscode.commands.registerCommand('kairu.foundry.runTestVerbose', async (fnName: string) => {
+			const cwd = getWorkspaceRoot();
+			if (!cwd) { return; }
+			const channel = vscode.window.createOutputChannel('Kairu Foundry Tests');
+			channel.show();
+			channel.appendLine(`$ forge test --match-test ^${fnName}$ -vvvv\n`);
+			// Run with verbose flag using raw spawn
+			const { spawn } = require('child_process') as typeof import('child_process');
+			const child = spawn('forge', ['test', '--match-test', `^${fnName}$`, '-vvvv'], { cwd, shell: false });
+			child.stdout.on('data', (d: Buffer) => channel.append(d.toString()));
+			child.stderr.on('data', (d: Buffer) => channel.append(d.toString()));
+			child.on('close', (code: number) => channel.appendLine(`\n[exited ${code}]`));
+		}),
+
+		vscode.commands.registerCommand('kairu.foundry.runTestsByContract', async (contractName: string) => {
+			const cwd = getWorkspaceRoot();
+			if (!cwd) { return; }
+			const channel = vscode.window.createOutputChannel('Kairu Foundry Tests');
+			channel.show();
+			channel.appendLine(`$ forge test --match-contract ${contractName}\n`);
+			const results = await forgeTest(cwd, undefined, line => channel.appendLine(line));
+			const contractResults = results.filter(r => r.contract === contractName);
+			const pass = contractResults.filter(r => r.status === 'pass').length;
+			const fail = contractResults.filter(r => r.status === 'fail').length;
+			if (fail > 0) {
+				vscode.window.showErrorMessage(`${contractName}: ${fail} test(s) failed. See output.`);
+			} else if (contractResults.length > 0) {
+				vscode.window.showInformationMessage(`${contractName}: all ${pass} test(s) passed.`);
+			}
+		}),
+
+		vscode.commands.registerCommand('kairu.foundry.debugTestWithAI', async (fnName: string, filePath: string) => {
+			const cwd = getWorkspaceRoot();
+			// First run the test to get the actual failure reason
+			let failureReason = '';
+			if (cwd) {
+				const results = await forgeTest(cwd, fnName, () => {});
+				const r = results.find(r => r.name === fnName);
+				if (r?.status === 'fail') {
+					failureReason = r.reason ?? '';
+				}
+			}
+
+			// Open the test file in the editor if not already open
+			if (filePath) {
+				const doc = await vscode.workspace.openTextDocument(filePath);
+				await vscode.window.showTextDocument(doc, { preview: true, preserveFocus: true });
+			}
+
+			// Send to AI chat with structured prompt
+			const prompt = failureReason
+				? `The Foundry test \`${fnName}\` just failed.\n\nRevert reason: ${failureReason}\n\nPlease:\n1. Explain why this test is failing based on the code and the revert message\n2. Show the exact fix\n3. Verify the fix compiles by calling forge_build`
+				: `Analyze the Foundry test \`${fnName}\` in the active file.\n\nPlease:\n1. Explain what this test is checking\n2. Identify any edge cases it might miss\n3. Suggest improvements or additional assertions`;
+
+			await vscode.commands.executeCommand('kairu.ai.openChat');
+			// Small delay to let the chat panel open before sending
+			await new Promise(resolve => setTimeout(resolve, 400));
+			// Use the importApiKey command as a message bus isn't ideal — use a dedicated command
+			await vscode.commands.executeCommand('kairu.ai.sendMessage', prompt);
 		}),
 
 		vscode.commands.registerCommand('kairu.foundry.cast', async () => {

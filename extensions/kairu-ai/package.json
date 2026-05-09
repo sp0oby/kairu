@@ -121,6 +121,11 @@
 				"command": "kairu.ai.toggleInlineCompletions",
 				"title": "Kairu: Toggle Inline AI Completions",
 				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.sendMessage",
+				"title": "Kairu: Send Message to AI Chat",
+				"category": "Kairu"
 			}
 		],
 		"submenus": [
