@@ -10,6 +10,14 @@ extensions/**/dist/
 src/vs/base/browser/ui/codicons/codicon/codicon.ttf
 /out*/
 /extensions/**/out/
+
+# Include compiled output for extensions that need to work after a plain clone
+!/extensions/solidity/out/
+!/extensions/editorconfig/out/
+!/extensions/vscode-eslint/client/out/
+!/extensions/vscode-eslint/server/out/
+!/extensions/tailwindcss/dist/
+!/extensions/prettier/dist/
 build/node_modules
 build/darwin/.dmgbuild
 coverage/
