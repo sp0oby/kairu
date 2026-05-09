@@ -38,6 +38,11 @@
 				"category": "Kairu Security"
 			},
 			{
+				"command": "kairu.security.installSlither",
+				"title": "Kairu Security: Install Slither (one-click)",
+				"category": "Kairu Security"
+			},
+			{
 				"command": "kairu.security.checkPatterns",
 				"title": "Kairu Security: Check Common Vulnerability Patterns",
 				"category": "Kairu Security"

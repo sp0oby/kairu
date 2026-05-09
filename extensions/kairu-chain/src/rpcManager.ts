@@ -122,11 +122,23 @@ async function checkRpc(url: string): Promise<{ ok: boolean; latency?: number; b
 
 function getDefaultEndpoints(): RpcEndpoint[] {
 	return [
+		// Local
 		{ id: 'local', name: 'Local (Anvil)', chainId: '31337', url: 'http://localhost:8545', status: 'checking' },
-		{ id: 'mainnet-cf', name: 'Ethereum Mainnet', chainId: '1', url: 'https://cloudflare-eth.com', status: 'checking' },
-		{ id: 'base', name: 'Base', chainId: '8453', url: 'https://mainnet.base.org', status: 'checking' },
-		{ id: 'arb', name: 'Arbitrum One', chainId: '42161', url: 'https://arb1.arbitrum.io/rpc', status: 'checking' },
-		{ id: 'op', name: 'Optimism', chainId: '10', url: 'https://mainnet.optimism.io', status: 'checking' },
+
+		// Mainnets
+		{ id: 'mainnet-cf', name: 'Ethereum Mainnet', chainId: '1',     url: 'https://cloudflare-eth.com',          status: 'checking' },
+		{ id: 'base',       name: 'Base',             chainId: '8453',  url: 'https://mainnet.base.org',            status: 'checking' },
+		{ id: 'arb',        name: 'Arbitrum One',     chainId: '42161', url: 'https://arb1.arbitrum.io/rpc',        status: 'checking' },
+		{ id: 'op',         name: 'Optimism',         chainId: '10',    url: 'https://mainnet.optimism.io',         status: 'checking' },
+		{ id: 'polygon',    name: 'Polygon',          chainId: '137',   url: 'https://polygon-rpc.com',             status: 'checking' },
+
+		// Testnets — most common for dev/testing
+		{ id: 'sepolia',           name: 'Sepolia',          chainId: '11155111', url: 'https://ethereum-sepolia-rpc.publicnode.com', status: 'checking' },
+		{ id: 'holesky',           name: 'Holesky',          chainId: '17000',    url: 'https://ethereum-holesky-rpc.publicnode.com', status: 'checking' },
+		{ id: 'base-sepolia',      name: 'Base Sepolia',     chainId: '84532',    url: 'https://sepolia.base.org',                    status: 'checking' },
+		{ id: 'arb-sepolia',       name: 'Arbitrum Sepolia', chainId: '421614',   url: 'https://sepolia-rollup.arbitrum.io/rpc',      status: 'checking' },
+		{ id: 'op-sepolia',        name: 'Optimism Sepolia', chainId: '11155420', url: 'https://sepolia.optimism.io',                 status: 'checking' },
+		{ id: 'polygon-amoy',      name: 'Polygon Amoy',     chainId: '80002',    url: 'https://rpc-amoy.polygon.technology',         status: 'checking' },
 	];
 }
 

@@ -3,7 +3,16 @@
  *  Licensed under the MIT License.
  *--------------------------------------------------------------------------------------------*/
 
-export const CHAINS: Record<string, { name: string; explorer: string; apiBase: string; rpc: string }> = {
+export interface ChainInfo {
+	name: string;
+	explorer: string;
+	apiBase: string;
+	rpc: string;
+	isTestnet?: boolean;
+}
+
+export const CHAINS: Record<string, ChainInfo> = {
+	// ── Mainnets ──────────────────────────────────────────────────────────
 	'1':     { name: 'Ethereum Mainnet', explorer: 'https://etherscan.io', apiBase: 'https://api.etherscan.io/api', rpc: 'https://cloudflare-eth.com' },
 	'10':    { name: 'Optimism', explorer: 'https://optimistic.etherscan.io', apiBase: 'https://api-optimistic.etherscan.io/api', rpc: 'https://mainnet.optimism.io' },
 	'8453':  { name: 'Base', explorer: 'https://basescan.org', apiBase: 'https://api.basescan.org/api', rpc: 'https://mainnet.base.org' },
@@ -13,6 +22,20 @@ export const CHAINS: Record<string, { name: string; explorer: string; apiBase: s
 	'43114': { name: 'Avalanche', explorer: 'https://snowtrace.io', apiBase: 'https://api.snowtrace.io/api', rpc: 'https://api.avax.network/ext/bc/C/rpc' },
 	'534352':{ name: 'Scroll', explorer: 'https://scrollscan.com', apiBase: 'https://api.scrollscan.com/api', rpc: 'https://rpc.scroll.io' },
 	'324':   { name: 'zkSync Era', explorer: 'https://explorer.zksync.io', apiBase: 'https://block-explorer-api.mainnet.zksync.io/api', rpc: 'https://mainnet.era.zksync.io' },
+
+	// ── Testnets ──────────────────────────────────────────────────────────
+	'11155111': { name: 'Sepolia',           explorer: 'https://sepolia.etherscan.io',         apiBase: 'https://api-sepolia.etherscan.io/api',         rpc: 'https://ethereum-sepolia-rpc.publicnode.com', isTestnet: true },
+	'17000':    { name: 'Holesky',           explorer: 'https://holesky.etherscan.io',         apiBase: 'https://api-holesky.etherscan.io/api',         rpc: 'https://ethereum-holesky-rpc.publicnode.com', isTestnet: true },
+	'84532':    { name: 'Base Sepolia',      explorer: 'https://sepolia.basescan.org',         apiBase: 'https://api-sepolia.basescan.org/api',         rpc: 'https://sepolia.base.org',                    isTestnet: true },
+	'11155420': { name: 'Optimism Sepolia',  explorer: 'https://sepolia-optimism.etherscan.io', apiBase: 'https://api-sepolia-optimistic.etherscan.io/api', rpc: 'https://sepolia.optimism.io',          isTestnet: true },
+	'421614':   { name: 'Arbitrum Sepolia',  explorer: 'https://sepolia.arbiscan.io',          apiBase: 'https://api-sepolia.arbiscan.io/api',          rpc: 'https://sepolia-rollup.arbitrum.io/rpc',      isTestnet: true },
+	'80002':    { name: 'Polygon Amoy',      explorer: 'https://amoy.polygonscan.com',         apiBase: 'https://api-amoy.polygonscan.com/api',         rpc: 'https://rpc-amoy.polygon.technology',         isTestnet: true },
+	'97':       { name: 'BSC Testnet',       explorer: 'https://testnet.bscscan.com',          apiBase: 'https://api-testnet.bscscan.com/api',          rpc: 'https://data-seed-prebsc-1-s1.binance.org:8545', isTestnet: true },
+	'43113':    { name: 'Avalanche Fuji',    explorer: 'https://testnet.snowtrace.io',         apiBase: 'https://api-testnet.snowtrace.io/api',         rpc: 'https://api.avax-test.network/ext/bc/C/rpc',  isTestnet: true },
+	'534351':   { name: 'Scroll Sepolia',    explorer: 'https://sepolia.scrollscan.com',       apiBase: 'https://api-sepolia.scrollscan.com/api',       rpc: 'https://sepolia-rpc.scroll.io',               isTestnet: true },
+
+	// ── Local ─────────────────────────────────────────────────────────────
+	'31337':    { name: 'Anvil (local)',     explorer: '',                                      apiBase: '',                                              rpc: 'http://localhost:8545',                       isTestnet: true },
 };
 
 export interface ContractInfo {

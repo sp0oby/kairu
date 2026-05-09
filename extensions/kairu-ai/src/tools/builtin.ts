@@ -258,15 +258,38 @@ const patternAuditTool: ToolExecutor = {
 
 // ── tools: chain ───────────────────────────────────────────────────────────
 
+// Etherscan API bases for all supported chains (mainnets + testnets)
+const ETHERSCAN_API_BASES: Record<string, string> = {
+	// Mainnets
+	'1':      'https://api.etherscan.io/api',
+	'10':     'https://api-optimistic.etherscan.io/api',
+	'8453':   'https://api.basescan.org/api',
+	'42161':  'https://api.arbiscan.io/api',
+	'137':    'https://api.polygonscan.com/api',
+	'56':     'https://api.bscscan.com/api',
+	'43114':  'https://api.snowtrace.io/api',
+	'534352': 'https://api.scrollscan.com/api',
+	// Testnets
+	'11155111': 'https://api-sepolia.etherscan.io/api',          // Sepolia
+	'17000':    'https://api-holesky.etherscan.io/api',          // Holesky
+	'84532':    'https://api-sepolia.basescan.org/api',          // Base Sepolia
+	'11155420': 'https://api-sepolia-optimistic.etherscan.io/api', // Optimism Sepolia
+	'421614':   'https://api-sepolia.arbiscan.io/api',           // Arbitrum Sepolia
+	'80002':    'https://api-amoy.polygonscan.com/api',          // Polygon Amoy
+	'97':       'https://api-testnet.bscscan.com/api',           // BSC Testnet
+	'43113':    'https://api-testnet.snowtrace.io/api',          // Avalanche Fuji
+	'534351':   'https://api-sepolia.scrollscan.com/api',        // Scroll Sepolia
+};
+
 const etherscanContractTool: ToolExecutor = {
 	definition: {
 		name: 'etherscan_contract',
-		description: 'Fetch a verified contract\'s ABI and source code from Etherscan-compatible explorers (Mainnet, Optimism, Base, Arbitrum, Polygon, etc.). Requires kairu.chain.etherscanApiKey to be set.',
+		description: 'Fetch a verified contract\'s ABI and source code from Etherscan-compatible explorers. Supports mainnets (1=Mainnet, 8453=Base, 42161=Arbitrum, 10=Optimism, 137=Polygon, 56=BSC, 43114=Avalanche, 534352=Scroll) AND testnets (11155111=Sepolia, 17000=Holesky, 84532=Base Sepolia, 421614=Arb Sepolia, 11155420=OP Sepolia, 80002=Polygon Amoy). Requires kairu.chain.etherscanApiKey to be set.',
 		input_schema: {
 			type: 'object',
 			properties: {
 				address: { type: 'string', description: 'Contract address (0x-prefixed hex)' },
-				chain_id: { type: 'string', description: 'Chain ID as string. e.g. "1" for Mainnet, "8453" for Base, "42161" for Arbitrum' },
+				chain_id: { type: 'string', description: 'Chain ID as string. Common: "1"=Mainnet, "11155111"=Sepolia, "8453"=Base, "84532"=Base Sepolia' },
 			},
 			required: ['address', 'chain_id'],
 		},
@@ -276,15 +299,7 @@ const etherscanContractTool: ToolExecutor = {
 		if (!apiKey) { return 'No Etherscan API key configured. Set kairu.chain.etherscanApiKey in settings first.'; }
 		const address = String(input.address);
 		const chainId = String(input.chain_id);
-		const apiBases: Record<string, string> = {
-			'1': 'https://api.etherscan.io/api',
-			'10': 'https://api-optimistic.etherscan.io/api',
-			'8453': 'https://api.basescan.org/api',
-			'42161': 'https://api.arbiscan.io/api',
-			'137': 'https://api.polygonscan.com/api',
-			'56': 'https://api.bscscan.com/api',
-			'43114': 'https://api.snowtrace.io/api',
-		};
+		const apiBases = ETHERSCAN_API_BASES;
 		const apiBase = apiBases[chainId];
 		if (!apiBase) { return `Unsupported chain ID "${chainId}". Supported: ${Object.keys(apiBases).join(', ')}`; }
 		const url = `${apiBase}?module=contract&action=getsourcecode&address=${address}&apikey=${apiKey}`;
@@ -301,12 +316,12 @@ const etherscanContractTool: ToolExecutor = {
 const etherscanTxTool: ToolExecutor = {
 	definition: {
 		name: 'etherscan_tx',
-		description: 'Look up a transaction by hash on an Etherscan-compatible explorer. Returns tx info + receipt. Requires kairu.chain.etherscanApiKey.',
+		description: 'Look up a transaction by hash on an Etherscan-compatible explorer. Supports both mainnets and testnets (Sepolia, Holesky, Base Sepolia, Arbitrum Sepolia, Optimism Sepolia, Polygon Amoy). Returns tx info + receipt. Requires kairu.chain.etherscanApiKey.',
 		input_schema: {
 			type: 'object',
 			properties: {
 				hash: { type: 'string', description: 'Transaction hash (0x-prefixed)' },
-				chain_id: { type: 'string', description: 'Chain ID as string' },
+				chain_id: { type: 'string', description: 'Chain ID as string. Common: "1"=Mainnet, "11155111"=Sepolia, "8453"=Base, "84532"=Base Sepolia' },
 			},
 			required: ['hash', 'chain_id'],
 		},
@@ -316,13 +331,7 @@ const etherscanTxTool: ToolExecutor = {
 		if (!apiKey) { return 'No Etherscan API key configured.'; }
 		const hash = String(input.hash);
 		const chainId = String(input.chain_id);
-		const apiBases: Record<string, string> = {
-			'1': 'https://api.etherscan.io/api',
-			'10': 'https://api-optimistic.etherscan.io/api',
-			'8453': 'https://api.basescan.org/api',
-			'42161': 'https://api.arbiscan.io/api',
-			'137': 'https://api.polygonscan.com/api',
-		};
+		const apiBases = ETHERSCAN_API_BASES;
 		const apiBase = apiBases[chainId];
 		if (!apiBase) { return `Unsupported chain ID "${chainId}".`; }
 		const txResp = await fetch(`${apiBase}?module=proxy&action=eth_getTransactionByHash&txhash=${hash}&apikey=${apiKey}`, { signal: AbortSignal.timeout(15000) });

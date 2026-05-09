@@ -10,6 +10,7 @@ import { openAuditPanel, buildDiagnostics } from './auditPanel';
 import { activateSecretDetection } from './secretDetector';
 import { runEnvImport } from './envImport';
 import { KairuSecurityCodeActionProvider, askAIToFix, auditAllFindingsWithAI } from './codeActions';
+import { ensureSlitherInstalled } from './slitherInstaller';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection('kairu-security');
@@ -17,6 +18,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
 	// Secret detection (Phase 11A)
 	activateSecretDetection(context);
+
+	// Background: prompt to install Slither if missing (once per user, dismissible).
+	// Delayed so it doesn't interrupt window startup.
+	setTimeout(() => {
+		ensureSlitherInstalled(context).catch(() => { /* best-effort */ });
+	}, 8000);
 
 	// "Fix with Kairu AI" code action provider (lightbulb on diagnostics)
 	context.subscriptions.push(
@@ -144,6 +151,10 @@ export function activate(context: vscode.ExtensionContext): void {
 		vscode.commands.registerCommand('kairu.security.askAIToFix', askAIToFix),
 		vscode.commands.registerCommand('kairu.security.auditAllFindingsWithAI', auditAllFindingsWithAI),
 
+		vscode.commands.registerCommand('kairu.security.installSlither', async () => {
+			await ensureSlitherInstalled(context, true);
+		}),
+
 		vscode.commands.registerCommand('kairu.security.runSlither', async () => {
 			const editor = vscode.window.activeTextEditor;
 			if (!editor || editor.document.languageId !== 'solidity') {
@@ -152,14 +163,16 @@ export function activate(context: vscode.ExtensionContext): void {
 			}
 			const hasSlither = await checkSlitherInstalled();
 			if (!hasSlither) {
-				vscode.window.showErrorMessage(
-					'Slither not found. Install with: pip install slither-analyzer',
-					'Copy Install Command'
-				).then(choice => {
-					if (choice === 'Copy Install Command') {
-						vscode.env.clipboard.writeText('pip install slither-analyzer');
-					}
-				});
+				const action = await vscode.window.showErrorMessage(
+					'Slither is not installed.',
+					'Install Now',
+					'Copy Install Command',
+				);
+				if (action === 'Install Now') {
+					await ensureSlitherInstalled(context, true);
+				} else if (action === 'Copy Install Command') {
+					vscode.env.clipboard.writeText('pipx install slither-analyzer');
+				}
 				return;
 			}
 			await vscode.window.withProgress(
