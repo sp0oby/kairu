@@ -207,15 +207,20 @@ async function pickModel(providerId: ProviderId, secrets: SecretsManager): Promi
 			const choice = await vscode.window.showWarningMessage(
 				`Ollama is not running on ${endpoint}.`,
 				{ modal: false },
-				'Open Ollama Download',
+				'Install Ollama (one-click)',
 				"I'm running it — retry",
 				'Cancel'
 			);
-			if (choice === 'Open Ollama Download') {
-				vscode.env.openExternal(vscode.Uri.parse('https://ollama.com/download'));
-				return undefined;
-			}
-			if (choice === "I'm running it — retry") {
+			if (choice === 'Install Ollama (one-click)') {
+				const ok = await vscode.commands.executeCommand<boolean>('kairu.ai.installOllama');
+				if (!ok) { return undefined; }
+				try {
+					suggestions = await new OllamaProvider(endpoint).listModels();
+				} catch {
+					vscode.window.showErrorMessage('Ollama install completed but daemon is unreachable. Run `ollama serve` in a terminal and retry.');
+					return undefined;
+				}
+			} else if (choice === "I'm running it — retry") {
 				try {
 					suggestions = await new OllamaProvider(endpoint).listModels();
 				} catch {

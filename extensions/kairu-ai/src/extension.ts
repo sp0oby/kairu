@@ -17,6 +17,7 @@ import { KairuInlineCompletionProvider } from './inline/completionProvider';
 import { KairuStaticCompletionProvider } from './inline/staticCompletionProvider';
 import { generateCommitMessage } from './commitMessage';
 import { reviewDiffWithAI } from './reviewDiff';
+import { installOllama } from './ollamaInstaller';
 
 export function activate(context: vscode.ExtensionContext): void {
 	const secrets = new SecretsManager(context.secrets);
@@ -80,6 +81,10 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		vscode.commands.registerCommand('kairu.ai.reviewDiff', async () => {
 			await reviewDiffWithAI();
+		}),
+
+		vscode.commands.registerCommand('kairu.ai.installOllama', async () => {
+			await installOllama();
 		}),
 
 		vscode.commands.registerCommand('kairu.ai.toggleInlineCompletions', async () => {

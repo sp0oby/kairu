@@ -131,6 +131,11 @@
 				"command": "kairu.ai.reviewDiff",
 				"title": "Kairu: Review Changes with AI (Security + Correctness)",
 				"category": "Kairu"
+			},
+			{
+				"command": "kairu.ai.installOllama",
+				"title": "Kairu: Install Ollama (one-click)",
+				"category": "Kairu"
 			}
 		],
 		"submenus": [
