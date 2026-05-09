@@ -160,6 +160,25 @@ export function activate(context: vscode.ExtensionContext): void {
 						const key = await secrets.get('openai-compatible');
 						suggestions = await new OpenAIProvider('openai-compatible', endpoint, key).listModels();
 					}
+				} else if (providerId === 'openrouter') {
+					const key = await secrets.get('openrouter');
+					if (key) {
+						try {
+							const fetched = await new OpenAIProvider('openrouter', 'https://openrouter.ai/api/v1', key).listModels();
+							const free = fetched.filter(m => m.endsWith(':free'));
+							const paid = fetched.filter(m => !m.endsWith(':free')).slice(0, 20);
+							suggestions = [...free, ...paid];
+						} catch {
+							suggestions = [
+								'meta-llama/llama-3.3-70b-instruct:free',
+								'qwen/qwen2.5-coder-32b-instruct:free',
+								'deepseek/deepseek-r1:free',
+								'google/gemma-3-27b-it:free',
+								'anthropic/claude-sonnet-4-6',
+								'openai/gpt-4o',
+							];
+						}
+					}
 				}
 			} catch (err) {
 				vscode.window.showWarningMessage(`Could not list models: ${(err as Error).message}`);
@@ -197,7 +216,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		}),
 
 		vscode.commands.registerCommand('kairu.ai.setApiKey', async () => {
-			const items = (['anthropic', 'openai', 'gemini', 'openai-compatible'] as ProviderId[]).map(id => ({
+			const items = (['anthropic', 'openrouter', 'openai', 'gemini', 'openai-compatible'] as ProviderId[]).map(id => ({
 				label: PROVIDER_DISPLAY_NAMES[id],
 				id
 			}));
@@ -223,13 +242,13 @@ export function activate(context: vscode.ExtensionContext): void {
 
 		vscode.commands.registerCommand('kairu.ai.importApiKey', async (provider: string, value: string) => {
 			if (!provider || !value) { return; }
-			const valid: ProviderId[] = ['anthropic', 'openai', 'gemini', 'openai-compatible'];
+			const valid: ProviderId[] = ['anthropic', 'openrouter', 'openai', 'gemini', 'openai-compatible'];
 			if (!valid.includes(provider as ProviderId)) { return; }
 			await secrets.set(provider as ProviderId, value);
 		}),
 
 		vscode.commands.registerCommand('kairu.ai.deleteApiKey', async () => {
-			const items = (['anthropic', 'openai', 'gemini', 'openai-compatible'] as ProviderId[]).map(id => ({
+			const items = (['anthropic', 'openrouter', 'openai', 'gemini', 'openai-compatible'] as ProviderId[]).map(id => ({
 				label: PROVIDER_DISPLAY_NAMES[id],
 				id
 			}));

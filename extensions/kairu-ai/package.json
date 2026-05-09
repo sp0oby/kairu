@@ -123,14 +123,59 @@
 				"category": "Kairu"
 			}
 		],
+		"submenus": [
+			{
+				"id": "kairu.ai.contextMenu",
+				"label": "Kairu AI"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"submenu": "kairu.ai.contextMenu",
+					"when": "resourceExtname == .sol || editorLangId == solidity",
+					"group": "kairu@1"
+				}
+			],
+			"kairu.ai.contextMenu": [
+				{
+					"command": "kairu.ai.explainSelection",
+					"group": "1_understand@1"
+				},
+				{
+					"command": "kairu.ai.findVulnerabilities",
+					"group": "1_understand@2"
+				},
+				{
+					"command": "kairu.ai.summarizeFunction",
+					"group": "1_understand@3"
+				},
+				{
+					"command": "kairu.ai.generateFoundryTests",
+					"group": "2_generate@1"
+				},
+				{
+					"command": "kairu.ai.generateNatSpec",
+					"group": "2_generate@2"
+				},
+				{
+					"command": "kairu.ai.optimizeGas",
+					"group": "3_optimize@1"
+				},
+				{
+					"command": "kairu.ai.explainError",
+					"group": "3_optimize@2"
+				}
+			]
+		},
 		"configuration": {
 			"title": "Kairu AI",
 			"properties": {
 				"kairu.ai.provider": {
 					"type": "string",
-					"enum": ["anthropic", "openai", "gemini", "ollama", "openai-compatible"],
+					"enum": ["anthropic", "openrouter", "openai", "gemini", "ollama", "openai-compatible"],
 					"default": "anthropic",
-					"description": "AI provider to use for chat. Anthropic Claude is recommended; cloud providers store API keys encrypted in the OS keychain."
+					"description": "AI provider to use for chat. OpenRouter gives access to free models (Llama, DeepSeek, Qwen) with a free account. Cloud providers store API keys encrypted in the OS keychain."
 				},
 				"kairu.ai.model": {
 					"type": "string",

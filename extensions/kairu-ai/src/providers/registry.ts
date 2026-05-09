@@ -16,10 +16,11 @@ export const PROVIDER_DISPLAY_NAMES: Record<ProviderId, string> = {
 	'openai': 'OpenAI',
 	'gemini': 'Google Gemini',
 	'ollama': 'Ollama (local)',
-	'openai-compatible': 'OpenAI-compatible (custom)'
+	'openai-compatible': 'OpenAI-compatible (custom)',
+	'openrouter': 'OpenRouter'
 };
 
-export const ALL_PROVIDER_IDS: ProviderId[] = ['anthropic', 'openai', 'gemini', 'ollama', 'openai-compatible'];
+export const ALL_PROVIDER_IDS: ProviderId[] = ['anthropic', 'openrouter', 'openai', 'gemini', 'ollama', 'openai-compatible'];
 
 export async function buildProvider(secrets: SecretsManager): Promise<AIProvider> {
 	const config = vscode.workspace.getConfiguration('kairu.ai');
@@ -58,6 +59,13 @@ export async function buildProvider(secrets: SecretsManager): Promise<AIProvider
 			}
 			const key = await secrets.get('openai-compatible');
 			return new OpenAIProvider('openai-compatible', endpoint, key);
+		}
+		case 'openrouter': {
+			const key = await secrets.get('openrouter');
+			if (!key) {
+				throw new ProviderError('No OpenRouter API key set. Run "Kairu: Setup AI" or "Kairu: Set AI Provider API Key".');
+			}
+			return new OpenAIProvider('openrouter', 'https://openrouter.ai/api/v1', key);
 		}
 		default:
 			throw new ProviderError(`Unknown provider: ${id}`);

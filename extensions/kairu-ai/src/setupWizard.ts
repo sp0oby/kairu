@@ -20,10 +20,29 @@ const KNOWN_OPENAI_MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'o1', 'o1-m
 
 const KNOWN_GEMINI_MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash'];
 
+// Free-tier models on OpenRouter (no credit card required, just an account)
+const OPENROUTER_FREE_MODELS = [
+	'meta-llama/llama-3.3-70b-instruct:free',
+	'qwen/qwen2.5-coder-32b-instruct:free',
+	'deepseek/deepseek-r1:free',
+	'google/gemma-3-27b-it:free',
+	'mistralai/mistral-7b-instruct:free',
+];
+
+const OPENROUTER_PAID_MODELS = [
+	'anthropic/claude-sonnet-4-6',
+	'anthropic/claude-opus-4-7',
+	'openai/gpt-4o',
+	'google/gemini-2.5-pro',
+	'deepseek/deepseek-r1',
+	'qwen/qwen2.5-coder-32b-instruct',
+];
+
 const PROVIDER_KEY_HELP: Record<string, { url: string; placeholder: string; label: string }> = {
 	anthropic: { url: 'https://console.anthropic.com/settings/keys', placeholder: 'sk-ant-...', label: 'Anthropic Console' },
 	openai: { url: 'https://platform.openai.com/api-keys', placeholder: 'sk-...', label: 'OpenAI Dashboard' },
-	gemini: { url: 'https://aistudio.google.com/app/apikey', placeholder: 'AIza...', label: 'Google AI Studio' }
+	gemini: { url: 'https://aistudio.google.com/app/apikey', placeholder: 'AIza...', label: 'Google AI Studio' },
+	openrouter: { url: 'https://openrouter.ai/keys', placeholder: 'sk-or-v1-...', label: 'OpenRouter Dashboard' },
 };
 
 /**
@@ -40,8 +59,14 @@ export async function runSetupWizard(secrets: SecretsManager): Promise<boolean> 
 	const providerChoice = await vscode.window.showQuickPick(
 		[
 			{
+				label: '$(rocket) OpenRouter — Free models available',
+				description: 'Recommended for new users · Llama 3.3, DeepSeek R1, Qwen Coder',
+				detail: 'Free tier: no credit card required. Get a key at openrouter.ai/keys',
+				id: 'openrouter' as ProviderId
+			},
+			{
 				label: '$(sparkle) Anthropic Claude',
-				description: 'Recommended · Best for code reasoning and audits',
+				description: 'Best reasoning for audits and code · Claude Opus/Sonnet/Haiku',
 				detail: 'Get a key: console.anthropic.com',
 				id: 'anthropic' as ProviderId
 			},
@@ -59,7 +84,7 @@ export async function runSetupWizard(secrets: SecretsManager): Promise<boolean> 
 			},
 			{
 				label: '$(server) OpenAI-compatible (custom)',
-				description: 'Self-hosted vLLM, OpenRouter, LM Studio, etc.',
+				description: 'Self-hosted vLLM, LM Studio, etc.',
 				detail: 'For enterprise / custom deployments',
 				id: 'openai-compatible' as ProviderId
 			},
@@ -80,13 +105,17 @@ export async function runSetupWizard(secrets: SecretsManager): Promise<boolean> 
 	await config.update('provider', providerId, vscode.ConfigurationTarget.Global);
 
 	// Cloud providers need an API key
-	if (providerId === 'anthropic' || providerId === 'openai' || providerId === 'gemini') {
+	if (providerId === 'anthropic' || providerId === 'openai' || providerId === 'gemini' || providerId === 'openrouter') {
 		const help = PROVIDER_KEY_HELP[providerId];
 		const existingKey = await secrets.get(providerId);
 		let key = existingKey;
 		if (!key) {
+			const isOpenRouter = providerId === 'openrouter';
+			const keyMsg = isOpenRouter
+				? `OpenRouter is free to sign up — no credit card required. Get your free API key at openrouter.ai/keys (stored encrypted in your macOS Keychain).`
+				: `To use ${providerChoice.label.replace(/\$\([^)]+\)\s?/, '')}, paste your API key (it's stored encrypted in your macOS Keychain — never sent anywhere except the API).`;
 			const action = await vscode.window.showInformationMessage(
-				`To use ${providerChoice.label.replace(/\$\([^)]+\)\s?/, '')}, paste your API key (it's stored encrypted in your macOS Keychain — never sent anywhere except the API).`,
+				keyMsg,
 				{ modal: false },
 				'Paste API Key',
 				`Open ${help.label}`,
@@ -238,15 +267,33 @@ async function pickModel(providerId: ProviderId, secrets: SecretsManager): Promi
 		} catch {
 			// fall through to manual entry
 		}
+	} else if (providerId === 'openrouter') {
+		const key = await secrets.get('openrouter');
+		try {
+			// Try to fetch live model list — fall back to curated list
+			const fetched = await new OpenAIProvider('openrouter', 'https://openrouter.ai/api/v1', key).listModels();
+			const freeModels = fetched.filter(m => m.endsWith(':free'));
+			const paidModels = fetched.filter(m => !m.endsWith(':free')).slice(0, 20);
+			suggestions = [...freeModels, ...paidModels];
+		} catch {
+			// fall through to curated defaults
+		}
+		if (suggestions.length === 0) {
+			suggestions = [...OPENROUTER_FREE_MODELS, ...OPENROUTER_PAID_MODELS];
+		}
 	}
 
 	if (suggestions.length > 0) {
+		const isFreeModel = (name: string) => name.endsWith(':free');
 		const items: vscode.QuickPickItem[] = [
-			...suggestions.map(name => ({ label: name })),
+			...suggestions.map(name => ({
+				label: name,
+				description: isFreeModel(name) ? '$(symbol-event) free' : undefined,
+			})),
 			{ label: '$(edit) Enter custom model name...' }
 		];
 		const choice = await vscode.window.showQuickPick(items, {
-			placeHolder: 'Pick a model',
+			placeHolder: providerId === 'openrouter' ? 'Pick a model (free models marked with ◆)' : 'Pick a model',
 			ignoreFocusOut: true
 		});
 		if (!choice) {
@@ -401,6 +448,9 @@ export async function isSetupComplete(secrets: SecretsManager): Promise<boolean>
 	if (provider === 'openai-compatible') {
 		const endpoint = config.get<string>('openaiCompatible.endpoint', '');
 		return Boolean(endpoint);
+	}
+	if (provider === 'openrouter') {
+		return Boolean(await secrets.get('openrouter'));
 	}
 	return true; // ollama
 }

@@ -3,7 +3,7 @@
  *  Licensed under the MIT License.
  *--------------------------------------------------------------------------------------------*/
 
-export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'openai-compatible';
+export type ProviderId = 'anthropic' | 'openai' | 'gemini' | 'ollama' | 'openai-compatible' | 'openrouter';
 
 export interface ChatMessage {
 	role: 'system' | 'user' | 'assistant' | 'tool';
