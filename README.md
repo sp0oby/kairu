@@ -80,21 +80,8 @@ Right-click any `.sol` file → **Kairu AI** submenu: Explain, Find Vulnerabilit
 ```bash
 git clone https://github.com/sp0oby/kairu
 cd kairu
-npm install
-```
-
-### Build extensions
-
-```bash
-for ext in kairu-ai kairu-foundry kairu-security kairu-chain kairu-dashboard kairu-web3-tools; do
-  npx tsc -p extensions/$ext/tsconfig.json
-done
-```
-
-### Launch
-
-```bash
-./scripts/code.sh
+./scripts/kairu-setup.sh   # installs deps + compiles all extensions (~5 min first run)
+./scripts/code.sh           # launch
 ```
 
 ### Set up AI
