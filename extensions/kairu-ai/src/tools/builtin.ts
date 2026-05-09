@@ -258,28 +258,25 @@ const patternAuditTool: ToolExecutor = {
 
 // ── tools: chain ───────────────────────────────────────────────────────────
 
-// Etherscan API bases for all supported chains (mainnets + testnets)
-const ETHERSCAN_API_BASES: Record<string, string> = {
+// Etherscan V2 API: single endpoint + chain-id param works for all 60+ chains
+// with one API key. https://docs.etherscan.io/etherscan-v2/getting-started/v2-quickstart
+const ETHERSCAN_V2_API = 'https://api.etherscan.io/v2/api';
+
+const SUPPORTED_CHAINS: Record<string, string> = {
 	// Mainnets
-	'1':      'https://api.etherscan.io/api',
-	'10':     'https://api-optimistic.etherscan.io/api',
-	'8453':   'https://api.basescan.org/api',
-	'42161':  'https://api.arbiscan.io/api',
-	'137':    'https://api.polygonscan.com/api',
-	'56':     'https://api.bscscan.com/api',
-	'43114':  'https://api.snowtrace.io/api',
-	'534352': 'https://api.scrollscan.com/api',
+	'1': 'Ethereum', '10': 'Optimism', '8453': 'Base', '42161': 'Arbitrum',
+	'137': 'Polygon', '56': 'BSC', '43114': 'Avalanche', '534352': 'Scroll',
 	// Testnets
-	'11155111': 'https://api-sepolia.etherscan.io/api',          // Sepolia
-	'17000':    'https://api-holesky.etherscan.io/api',          // Holesky
-	'84532':    'https://api-sepolia.basescan.org/api',          // Base Sepolia
-	'11155420': 'https://api-sepolia-optimistic.etherscan.io/api', // Optimism Sepolia
-	'421614':   'https://api-sepolia.arbiscan.io/api',           // Arbitrum Sepolia
-	'80002':    'https://api-amoy.polygonscan.com/api',          // Polygon Amoy
-	'97':       'https://api-testnet.bscscan.com/api',           // BSC Testnet
-	'43113':    'https://api-testnet.snowtrace.io/api',          // Avalanche Fuji
-	'534351':   'https://api-sepolia.scrollscan.com/api',        // Scroll Sepolia
+	'11155111': 'Sepolia', '17000': 'Holesky', '84532': 'Base Sepolia',
+	'11155420': 'Optimism Sepolia', '421614': 'Arbitrum Sepolia',
+	'80002': 'Polygon Amoy', '97': 'BSC Testnet', '43113': 'Avalanche Fuji',
+	'534351': 'Scroll Sepolia',
 };
+
+function v2Url(chainId: string, params: Record<string, string>, apiKey: string): string {
+	const qs = new URLSearchParams({ chainid: chainId, ...params, apikey: apiKey });
+	return `${ETHERSCAN_V2_API}?${qs.toString()}`;
+}
 
 const etherscanContractTool: ToolExecutor = {
 	definition: {
@@ -299,17 +296,16 @@ const etherscanContractTool: ToolExecutor = {
 		if (!apiKey) { return 'No Etherscan API key configured. Set kairu.chain.etherscanApiKey in settings first.'; }
 		const address = String(input.address);
 		const chainId = String(input.chain_id);
-		const apiBases = ETHERSCAN_API_BASES;
-		const apiBase = apiBases[chainId];
-		if (!apiBase) { return `Unsupported chain ID "${chainId}". Supported: ${Object.keys(apiBases).join(', ')}`; }
-		const url = `${apiBase}?module=contract&action=getsourcecode&address=${address}&apikey=${apiKey}`;
+		if (!SUPPORTED_CHAINS[chainId]) { return `Unsupported chain ID "${chainId}". Supported: ${Object.keys(SUPPORTED_CHAINS).join(', ')}`; }
+		const url = v2Url(chainId, { module: 'contract', action: 'getsourcecode', address }, apiKey);
 		const resp = await fetch(url, { signal: AbortSignal.timeout(15000) });
-		const json = await resp.json() as { status: string; result: Array<Record<string, string>> };
-		if (json.status !== '1' || !json.result?.[0]) { return `No verified contract found at ${address} on chain ${chainId}.`; }
+		const json = await resp.json() as { status: string; message?: string; result: Array<Record<string, string>> | string };
+		if (typeof json.result === 'string') { return `Etherscan error: ${json.message || json.result}`; }
+		if (json.status !== '1' || !json.result?.[0]) { return `No verified contract found at ${address} on ${SUPPORTED_CHAINS[chainId]} (chain ${chainId}).`; }
 		const r = json.result[0];
 		const verified = r['ABI'] && r['ABI'] !== 'Contract source code not verified';
-		if (!verified) { return `Contract at ${address} is NOT verified.`; }
-		return `Contract: ${r['ContractName']}\nCompiler: ${r['CompilerVersion']}\nOptimized: ${r['OptimizationUsed'] === '1' ? 'yes' : 'no'}\nProxy: ${r['Proxy'] === '1' ? 'yes' : 'no'}\n\nABI (truncated):\n${truncate(r['ABI'], 4000)}\n\nSource (truncated):\n${truncate(r['SourceCode'] || '(empty)', 4000)}`;
+		if (!verified) { return `Contract at ${address} on ${SUPPORTED_CHAINS[chainId]} is NOT verified.`; }
+		return `Contract: ${r['ContractName']} (on ${SUPPORTED_CHAINS[chainId]})\nCompiler: ${r['CompilerVersion']}\nOptimized: ${r['OptimizationUsed'] === '1' ? 'yes' : 'no'}\nProxy: ${r['Proxy'] === '1' ? 'yes' : 'no'}\n\nABI (truncated):\n${truncate(r['ABI'], 4000)}\n\nSource (truncated):\n${truncate(r['SourceCode'] || '(empty)', 4000)}`;
 	},
 };
 
@@ -331,14 +327,12 @@ const etherscanTxTool: ToolExecutor = {
 		if (!apiKey) { return 'No Etherscan API key configured.'; }
 		const hash = String(input.hash);
 		const chainId = String(input.chain_id);
-		const apiBases = ETHERSCAN_API_BASES;
-		const apiBase = apiBases[chainId];
-		if (!apiBase) { return `Unsupported chain ID "${chainId}".`; }
-		const txResp = await fetch(`${apiBase}?module=proxy&action=eth_getTransactionByHash&txhash=${hash}&apikey=${apiKey}`, { signal: AbortSignal.timeout(15000) });
+		if (!SUPPORTED_CHAINS[chainId]) { return `Unsupported chain ID "${chainId}".`; }
+		const txResp = await fetch(v2Url(chainId, { module: 'proxy', action: 'eth_getTransactionByHash', txhash: hash }, apiKey), { signal: AbortSignal.timeout(15000) });
 		const txJson = await txResp.json() as { result?: Record<string, string> };
-		if (!txJson.result) { return `Transaction ${hash} not found on chain ${chainId}.`; }
+		if (!txJson.result) { return `Transaction ${hash} not found on ${SUPPORTED_CHAINS[chainId]}.`; }
 		const tx = txJson.result;
-		const receiptResp = await fetch(`${apiBase}?module=proxy&action=eth_getTransactionReceipt&txhash=${hash}&apikey=${apiKey}`, { signal: AbortSignal.timeout(15000) });
+		const receiptResp = await fetch(v2Url(chainId, { module: 'proxy', action: 'eth_getTransactionReceipt', txhash: hash }, apiKey), { signal: AbortSignal.timeout(15000) });
 		const receiptJson = await receiptResp.json() as { result?: Record<string, string> };
 		const receipt = receiptJson.result;
 		return `from: ${tx.from}\nto: ${tx.to}\nvalue: ${BigInt(tx.value || '0x0').toString()} wei\nblock: ${parseInt(tx.blockNumber || '0', 16)}\nstatus: ${receipt?.status === '0x1' ? 'success' : receipt ? 'reverted' : 'unknown'}\ngasUsed: ${receipt ? parseInt(receipt.gasUsed || '0x0', 16) : 'unknown'}\n\ninput: ${truncate(tx.input || '0x', 600)}`;

@@ -199,11 +199,11 @@ label { font-size: 11px; color: var(--muted); white-space: nowrap; }
     <input type="text" id="add-chain" placeholder="1" style="width:60px">
     <label>URL:</label>
     <input type="text" id="add-url" placeholder="https://..." style="flex:1;min-width:200px">
-    <button onclick="addEndpoint()">Add</button>
+    <button id="add-btn">Add</button>
   </div>
 </div>
 <div class="row" style="margin-top:0">
-  <button class="btn-ghost" onclick="checkAll()">Check All Health</button>
+  <button class="btn-ghost" id="check-all-btn">Check All Health</button>
 </div>
 <h2>Endpoints</h2>
 <div id="endpoint-list"></div>
@@ -224,33 +224,70 @@ function addEndpoint() {
   const name = document.getElementById('add-name').value.trim();
   const chainId = document.getElementById('add-chain').value.trim();
   const url = document.getElementById('add-url').value.trim();
-  if (!name || !url) return;
+  if (!name || !url) {
+    return;
+  }
   vscode.postMessage({ type: 'add', name, chainId: chainId || '1', url });
   document.getElementById('add-name').value = '';
+  document.getElementById('add-chain').value = '';
   document.getElementById('add-url').value = '';
 }
 
-function removeEndpoint(id) { vscode.postMessage({ type: 'remove', id }); }
-function checkEndpoint(id) { vscode.postMessage({ type: 'check', id }); }
-function checkAll() { vscode.postMessage({ type: 'checkAll' }); }
-function setDefault(id) { vscode.postMessage({ type: 'setDefault', id }); }
-function copyUrl(url) { vscode.postMessage({ type: 'copy', text: url }); }
+document.getElementById('add-btn').addEventListener('click', addEndpoint);
+document.getElementById('check-all-btn').addEventListener('click', () => {
+  vscode.postMessage({ type: 'checkAll' });
+});
+
+// Submit on Enter inside any of the add-form inputs
+['add-name', 'add-chain', 'add-url'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addEndpoint();
+    }
+  });
+});
+
+// Delegated handler for the dynamic endpoint list
+document.getElementById('endpoint-list').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) { return; }
+  const id = btn.dataset.id;
+  const action = btn.dataset.action;
+  if (action === 'remove') { vscode.postMessage({ type: 'remove', id }); }
+  else if (action === 'check')   { vscode.postMessage({ type: 'check', id }); }
+  else if (action === 'default') { vscode.postMessage({ type: 'setDefault', id }); }
+  else if (action === 'copy')    { vscode.postMessage({ type: 'copy', text: btn.dataset.url }); }
+});
 
 function renderEndpoints() {
+  const list = document.getElementById('endpoint-list');
   if (endpoints.length === 0) {
-    document.getElementById('endpoint-list').innerHTML = '<p style="color:var(--muted);font-size:12px">No endpoints configured.</p>';
+    list.innerHTML = '<p style="color:var(--muted);font-size:12px">No endpoints configured.</p>';
     return;
   }
-  document.getElementById('endpoint-list').innerHTML = endpoints.map(ep => {
+  list.innerHTML = endpoints.map(ep => {
     const dotClass = ep.status === 'online' ? 'dot-online' : ep.status === 'offline' ? 'dot-offline' : 'dot-checking';
     const latency = ep.latency !== undefined ? '<span class="latency">' + ep.latency + 'ms</span>' : '';
     const block = ep.blockNumber !== undefined ? '<span class="latency">block #' + ep.blockNumber.toLocaleString() + '</span>' : '';
-    return '<div class="card"><div class="row" style="margin-bottom:4px"><span class="dot ' + dotClass + '"></span><span class="ep-name">' + escHtml(ep.name) + '</span><span style="font-size:10px;color:var(--muted)">chain:' + escHtml(ep.chainId) + '</span>' + latency + block + '<div style="margin-left:auto;display:flex;gap:6px"><button class="btn-sm btn-ghost" onclick="setDefault(\'' + ep.id + '\')">Set default</button><button class="btn-sm btn-ghost" onclick="checkEndpoint(\'' + ep.id + '\')">Ping</button><button class="btn-sm btn-ghost" onclick="copyUrl(\'' + escHtml(ep.url) + '\')">Copy</button><button class="btn-sm btn-danger" onclick="removeEndpoint(\'' + ep.id + '\')">✕</button></div></div><div class="ep-url">' + escHtml(ep.url) + '</div></div>';
+    const id = escHtml(ep.id);
+    const url = escHtml(ep.url);
+    return '<div class="card"><div class="row" style="margin-bottom:4px">' +
+      '<span class="dot ' + dotClass + '"></span>' +
+      '<span class="ep-name">' + escHtml(ep.name) + '</span>' +
+      '<span style="font-size:10px;color:var(--muted)">chain:' + escHtml(ep.chainId) + '</span>' +
+      latency + block +
+      '<div style="margin-left:auto;display:flex;gap:6px">' +
+        '<button class="btn-sm btn-ghost" data-action="default" data-id="' + id + '">Set default</button>' +
+        '<button class="btn-sm btn-ghost" data-action="check"   data-id="' + id + '">Ping</button>' +
+        '<button class="btn-sm btn-ghost" data-action="copy"    data-id="' + id + '" data-url="' + url + '">Copy</button>' +
+        '<button class="btn-sm btn-danger" data-action="remove" data-id="' + id + '">✕</button>' +
+      '</div></div><div class="ep-url">' + url + '</div></div>';
   }).join('');
 }
 
 function escHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>

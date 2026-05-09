@@ -61,18 +61,38 @@ export interface TxInfo {
 	gasUsed?: number;
 }
 
+// Etherscan V2 API: one base URL, one API key, all chains.
+// https://docs.etherscan.io/etherscan-v2/getting-started/v2-quickstart
+const ETHERSCAN_V2_API = 'https://api.etherscan.io/v2/api';
+
+function v2Url(chainId: string, params: Record<string, string>, apiKey: string): string {
+	const qs = new URLSearchParams({
+		chainid: chainId,
+		...params,
+		apikey: apiKey,
+	});
+	return `${ETHERSCAN_V2_API}?${qs.toString()}`;
+}
+
 export async function fetchContractInfo(
 	address: string,
 	chainId: string,
 	apiKey: string
 ): Promise<ContractInfo | null> {
-	const chain = CHAINS[chainId];
-	if (!chain) { return null; }
+	if (!CHAINS[chainId]) { return null; }
 
-	const url = `${chain.apiBase}?module=contract&action=getsourcecode&address=${address}&apikey=${apiKey}`;
+	const url = v2Url(chainId, {
+		module: 'contract',
+		action: 'getsourcecode',
+		address,
+	}, apiKey);
 	try {
 		const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
-		const json = await resp.json() as { status: string; result: Array<Record<string, string>> };
+		const json = await resp.json() as { status: string; message?: string; result: Array<Record<string, string>> | string };
+		if (typeof json.result === 'string') {
+			console.warn('Etherscan V2 error:', json.message, json.result);
+			return null;
+		}
 		if (json.status !== '1' || !json.result?.[0]) { return null; }
 		const r = json.result[0];
 		return {
@@ -86,7 +106,8 @@ export async function fetchContractInfo(
 			proxy: r['Proxy'] === '1',
 			implementation: r['Implementation'],
 		};
-	} catch {
+	} catch (err) {
+		console.warn('fetchContractInfo failed:', err);
 		return null;
 	}
 }
@@ -96,10 +117,13 @@ export async function fetchTxInfo(
 	chainId: string,
 	apiKey: string
 ): Promise<TxInfo | null> {
-	const chain = CHAINS[chainId];
-	if (!chain) { return null; }
+	if (!CHAINS[chainId]) { return null; }
 
-	const url = `${chain.apiBase}?module=proxy&action=eth_getTransactionByHash&txhash=${txHash}&apikey=${apiKey}`;
+	const url = v2Url(chainId, {
+		module: 'proxy',
+		action: 'eth_getTransactionByHash',
+		txhash: txHash,
+	}, apiKey);
 	try {
 		const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
 		const json = await resp.json() as { result?: Record<string, string> | null };
@@ -123,9 +147,12 @@ export async function fetchTxReceipt(
 	chainId: string,
 	apiKey: string
 ): Promise<{ status: number; gasUsed: number } | null> {
-	const chain = CHAINS[chainId];
-	if (!chain) { return null; }
-	const url = `${chain.apiBase}?module=proxy&action=eth_getTransactionReceipt&txhash=${txHash}&apikey=${apiKey}`;
+	if (!CHAINS[chainId]) { return null; }
+	const url = v2Url(chainId, {
+		module: 'proxy',
+		action: 'eth_getTransactionReceipt',
+		txhash: txHash,
+	}, apiKey);
 	try {
 		const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
 		const json = await resp.json() as { result?: Record<string, string> | null };
