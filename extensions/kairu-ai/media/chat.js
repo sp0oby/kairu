@@ -76,13 +76,24 @@
 		clearEmptyState();
 		const wrapper = document.createElement('div');
 		wrapper.className = `kairu-message kairu-message-${role}`;
+		const roleLabel = role === 'assistant'
+			? '<span class="kairu-role-mark">K</span>'
+			: '<span class="kairu-role-you">You</span>';
 		wrapper.innerHTML = `
-			<div class="kairu-message-role">${role === 'assistant' ? 'Kairu' : 'You'}</div>
+			<div class="kairu-message-role">${roleLabel}</div>
 			<div class="kairu-message-body">${renderMarkdown(content)}</div>
 		`;
 		messagesEl.appendChild(wrapper);
 		scrollToBottom();
 		return wrapper;
+	}
+
+	function stripModelPrefix(text) {
+		return text
+			.replace(/^(Kairu|kairu)\s*[:：]\s*/u, '')
+			.replace(/^(Kairu|kairu)\n+/u, '')
+			.replace(/^\*\*(Kairu|kairu)\*\*\s*[:：]\s*/u, '')
+			.replace(/^(Assistant|ASSISTANT)\s*[:：]\s*/u, '');
 	}
 
 	function scrollToBottom() {
@@ -211,6 +222,12 @@
 	providerPill.addEventListener('click', () => vscode.postMessage({ type: 'pickProvider' }));
 	modelPill.addEventListener('click', () => vscode.postMessage({ type: 'pickModel' }));
 
+	document.addEventListener('click', e => {
+		if (e.target && e.target.id === 'setup-btn') {
+			vscode.postMessage({ type: 'setup' });
+		}
+	});
+
 	// Delegate click on the setup button (rendered inside the empty state)
 	document.addEventListener('click', e => {
 		if (e.target && e.target.id === 'setup-btn') {
@@ -254,12 +271,16 @@
 			case 'streamStart':
 				messageBuffer = '';
 				liveAssistantEl = addMessage('assistant', '');
+				liveAssistantEl.querySelector('.kairu-message-body').innerHTML = '<span class="kairu-thinking"></span>';
 				return;
 			case 'append':
 				if (!liveAssistantEl) {
 					liveAssistantEl = addMessage('assistant', '');
 				}
 				messageBuffer += msg.delta;
+				if (messageBuffer.length < 60) {
+					messageBuffer = stripModelPrefix(messageBuffer);
+				}
 				const body = liveAssistantEl.querySelector('.kairu-message-body');
 				body.innerHTML = renderMarkdown(messageBuffer);
 				scrollToBottom();

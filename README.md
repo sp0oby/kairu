@@ -1,78 +1,132 @@
-# Visual Studio Code - Open Source ("Code - OSS")
-[![Feature Requests](https://img.shields.io/github/issues/microsoft/vscode/feature-request.svg)](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
-[![Bugs](https://img.shields.io/github/issues/microsoft/vscode/bug.svg)](https://github.com/microsoft/vscode/issues?utf8=✓&q=is%3Aissue+is%3Aopen+label%3Abug)
-[![Gitter](https://img.shields.io/badge/chat-on%20gitter-yellow.svg)](https://gitter.im/Microsoft/vscode)
+# Kairu Studio
 
-## The Repository
+**The Web3 IDE.** A purpose-built code editor for smart contract developers — built on VS Code, shipping Foundry, security analysis, and an AI agent that can actually read and modify your code.
 
-This repository ("`Code - OSS`") is where we (Microsoft) develop the [Visual Studio Code](https://code.visualstudio.com) product together with the community. Not only do we work on code and issues here, but we also publish our [roadmap](https://github.com/microsoft/vscode/wiki/Roadmap), [monthly iteration plans](https://github.com/microsoft/vscode/wiki/Iteration-Plans), and our [endgame plans](https://github.com/microsoft/vscode/wiki/Running-the-Endgame). This source code is available to everyone under the standard [MIT license](https://github.com/microsoft/vscode/blob/main/LICENSE.txt).
+> Early access · Work in progress · Feedback welcome
 
-## Visual Studio Code
+---
 
-<p align="center">
-  <img alt="VS Code in action" src="https://user-images.githubusercontent.com/35271042/118224532-3842c400-b438-11eb-923d-a5f66fa6785a.png">
-</p>
+## What makes it different
 
-[Visual Studio Code](https://code.visualstudio.com) is a distribution of the `Code - OSS` repository with Microsoft-specific customizations released under a traditional [Microsoft product license](https://code.visualstudio.com/License/).
+Most AI coding tools are general-purpose chat with syntax highlighting bolted on. Kairu is built around the Web3 development loop:
 
-[Visual Studio Code](https://code.visualstudio.com) combines the simplicity of a code editor with what developers need for their core edit-build-debug cycle. It provides comprehensive code editing, navigation, and understanding support along with lightweight debugging, a rich extensibility model, and lightweight integration with existing tools.
+- **Write** — Solidity/Vyper syntax, 31 snippets, ghost-text completions for common patterns (pragma, contract, function, mappings, etc.)
+- **Test** — Foundry integration with inline `▶ Run` / `◇ Debug with AI` buttons above every test function
+- **Audit** — Vulnerability scanner runs on every save, inline squiggles, "Fix with AI" lightbulb on each finding
+- **Ship** — AI-generated commit messages, AI diff review before you push
 
-Visual Studio Code is updated monthly with new features and bug fixes. You can download it for Windows, macOS, and Linux on [Visual Studio Code's website](https://code.visualstudio.com/Download). To get the latest releases every day, install the [Insiders build](https://code.visualstudio.com/insiders).
+---
 
-## Contributing
+## AI Features
 
-There are many ways in which you can participate in this project, for example:
+### Agent loop — not just chat
+The AI calls tools in a loop: reads your files, edits them, runs `forge build`, checks if it compiled, and iterates. 13 built-in tools:
 
-* [Submit bugs and feature requests](https://github.com/microsoft/vscode/issues), and help us verify as they are checked in
-* Review [source code changes](https://github.com/microsoft/vscode/pulls)
-* Review the [documentation](https://github.com/microsoft/vscode-docs) and make pull requests for anything from typos to and new content.
+`read_file` · `edit_file` · `write_file` · `list_files` · `forge_build` · `forge_test` · `slither_audit` · `pattern_audit` · `etherscan_contract` · `etherscan_tx` · `eth_call` · `find_contract` · `search_workspace`
 
-If you are interested in fixing issues and contributing directly to the code base,
-please see the document [How to Contribute](https://github.com/microsoft/vscode/wiki/How-to-Contribute), which covers the following:
+### Free models via OpenRouter
+No credit card required — sign up at [openrouter.ai](https://openrouter.ai) and use:
+- `meta-llama/llama-3.3-70b-instruct:free`
+- `qwen/qwen2.5-coder-32b-instruct:free`
+- `deepseek/deepseek-r1:free`
+- `google/gemma-3-27b-it:free`
 
-* [How to build and run from source](https://github.com/microsoft/vscode/wiki/How-to-Contribute)
-* [The development workflow, including debugging and running tests](https://github.com/microsoft/vscode/wiki/How-to-Contribute#debugging)
-* [Coding guidelines](https://github.com/microsoft/vscode/wiki/Coding-Guidelines)
-* [Submitting pull requests](https://github.com/microsoft/vscode/wiki/How-to-Contribute#pull-requests)
-* [Finding an issue to work on](https://github.com/microsoft/vscode/wiki/How-to-Contribute#where-to-contribute)
-* [Contributing to translations](https://aka.ms/vscodeloc)
+Also supports Anthropic Claude, OpenAI, Google Gemini, and local Ollama.
 
-## Feedback
+### Right-click context menus
+Right-click any `.sol` file → **Kairu AI** submenu: Explain, Find Vulnerabilities, Generate Foundry Tests, Generate NatSpec, Optimize Gas, Explain Error.
 
-* Ask a question on [Stack Overflow](https://stackoverflow.com/questions/tagged/vscode)
-* [Request a new feature](CONTRIBUTING.md)
-* Upvote [popular feature requests](https://github.com/microsoft/vscode/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request+sort%3Areactions-%2B1-desc)
-* [File an issue](https://github.com/microsoft/vscode/issues)
-* Connect with the extension author community on [GitHub Discussions](https://github.com/microsoft/vscode-discussions/discussions) or [Slack](https://aka.ms/vscode-dev-community)
-* Follow [@code](https://x.com/code) and let us know what you think!
+### Review changes before pushing
+`Kairu: Review Changes with AI` — scans staged/unstaged diffs for reentrancy, access control, integer overflow, unchecked calls, and gas problems. Results stream into the chat.
 
-See our [wiki](https://github.com/microsoft/vscode/wiki/Feedback-Channels) for a description of each of these channels and information on some other available community-driven channels.
+---
 
-## Related Projects
+## Foundry Integration
 
-Many of the core components and extensions to VS Code live in their own repositories on GitHub. For example, the [node debug adapter](https://github.com/microsoft/vscode-node-debug) and the [mono debug adapter](https://github.com/microsoft/vscode-mono-debug) repositories are separate from each other. For a complete list, please visit the [Related Projects](https://github.com/microsoft/vscode/wiki/Related-Projects) page on our [wiki](https://github.com/microsoft/vscode/wiki).
+- **Test runner panel** — visual pass/fail/skip with per-test gas
+- **CodeLens** — `▶ Run`, `◇ Debug with AI`, `-vvvv` inline above every `test*` / `invariant*` function
+- **Coverage panel** — line-level gutters
+- **Anvil fork manager**
+- **Gas snapshot** and **trace viewer**
 
-## Bundled Extensions
+---
 
-VS Code includes a set of built-in extensions located in the [extensions](extensions) folder, including grammars and snippets for many languages. Extensions that provide rich language support (inline suggestions, Go to Definition) for a language have the suffix `language-features`. For example, the `json` extension provides coloring for `JSON` and the `json-language-features` extension provides rich language support for `JSON`.
+## Security
 
-## Development Container
+- 10-pattern vulnerability scanner on every save (reentrancy, tx.origin, unchecked transfers, selfdestruct, delegatecall, timestamp dependence...)
+- Slither integration (`pip install slither-analyzer`)
+- Inline squiggles + Problems panel
+- **"Fix with AI"** code action lightbulb on each finding
+- Secret detection in `.env` files
 
-This repository includes a Visual Studio Code Dev Containers / GitHub Codespaces development container.
+---
 
-* For [Dev Containers](https://aka.ms/vscode-remote/download/containers), use the **Dev Containers: Clone Repository in Container Volume...** command which creates a Docker volume for better disk I/O on macOS and Windows.
-  * If you already have VS Code and Docker installed, you can also click [here](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/microsoft/vscode) to get started. This will cause VS Code to automatically install the Dev Containers extension if needed, clone the source code into a container volume, and spin up a dev container for use.
+## Chain Tools
 
-* For Codespaces, install the [GitHub Codespaces](https://marketplace.visualstudio.com/items?itemName=GitHub.codespaces) extension in VS Code, and use the **Codespaces: Create New Codespace** command.
+- Etherscan source + ABI fetcher (Mainnet, Base, Arbitrum, Optimism, Polygon)
+- Transaction decoder
+- `eth_call` against any RPC endpoint
+- RPC manager
 
-Docker / the Codespace should have at least **4 cores and 6 GB of RAM (8 GB recommended)** to run a full build. See the [development container README](.devcontainer/README.md) for more information.
+---
 
-## Code of Conduct
+## Getting Started
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+### Prerequisites
+
+- macOS (primary target)
+- Node.js 18+
+
+```bash
+git clone https://github.com/sp0oby/kairu
+cd kairu
+npm install
+```
+
+### Build extensions
+
+```bash
+for ext in kairu-ai kairu-foundry kairu-security kairu-chain kairu-dashboard kairu-web3-tools; do
+  npx tsc -p extensions/$ext/tsconfig.json
+done
+```
+
+### Launch
+
+```bash
+./scripts/code.sh
+```
+
+### Set up AI
+
+On first launch, the chat panel shows a **Setup AI (free with OpenRouter)** button. Pick a free model and start building.
+
+---
+
+## Extension Architecture
+
+| Extension | What it does |
+|---|---|
+| `kairu-ai` | Chat panel, AI agent loop, inline completions, commit message generation, diff review |
+| `kairu-foundry` | forge/cast/anvil integration, test panels, CodeLens on test functions |
+| `kairu-security` | Pattern scanner, Slither, audit panel, "Fix with AI" code actions |
+| `kairu-chain` | Etherscan, RPC manager, transaction analyzer |
+| `kairu-dashboard` | Status bar with AI/Foundry connectivity indicators, diagnostics |
+| `kairu-web3-tools` | Auto-templates for new `.sol` / `.t.sol` / `.s.sol` / `.vy` files |
+| `kairu-snippets` | 31 Solidity snippets (ERC20, EIP712, permit, merkle, ECDSA, diamond proxy, etc.) |
+
+---
+
+## Roadmap
+
+- [ ] Semantic code index (contract graph + function-level search)
+- [ ] Multi-file agent edits
+- [ ] Exploit replay / PoC generator
+- [ ] Protocol memory across sessions
+- [ ] Packaged `.dmg` installer
+
+---
 
 ## License
 
-Copyright (c) Microsoft Corporation. All rights reserved.
-
-Licensed under the [MIT](LICENSE.txt) license.
+MIT — same as VS Code. Built on [Code - OSS](https://github.com/microsoft/vscode).
